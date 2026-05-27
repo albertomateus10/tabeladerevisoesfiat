@@ -17,25 +17,25 @@ let selectedPackageName = 'fabrica';
 // Itens e preços de acréscimo para os pacotes de serviço
 const serviçosAdicionais = {
     basico: [
-        { nome: "Limpeza do Bico Injetor", pn: "SERVIÇO", preco: 180.0 },
-        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 195.0 },
+        { nome: "Limpeza do Bico Injetor", pn: "OF20003", preco: 177.99 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 272.22 },
         { nome: "Limpeza do TBI", pn: "SERVIÇO", preco: 160.0 },
-        { nome: "Limpeza do Sistema de Freio", pn: "SERVIÇO", preco: 160.0 }
+        { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 85.0 }
     ],
     intermediario: [
-        { nome: "Limpeza do Bico Injetor", pn: "SERVIÇO", preco: 180.0 },
-        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 195.0 },
+        { nome: "Limpeza do Bico Injetor", pn: "OF20003", preco: 177.99 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 272.22 },
         { nome: "Limpeza do TBI", pn: "SERVIÇO", preco: 160.0 },
-        { nome: "Limpeza do Sistema de Freio", pn: "SERVIÇO", preco: 160.0 },
-        { nome: "Higienização do Ar Condicionado", pn: "SERVIÇO", preco: 266.95 },
+        { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 85.0 },
+        { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
         { nome: "Lubrificação das Partes Móveis", pn: "FT7088810", preco: 104.37 },
     ],
     premium: [
-        { nome: "Limpeza do Bico Injetor", pn: "SERVIÇO", preco: 180.0 },
-        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 195.0 },
+        { nome: "Limpeza do Bico Injetor", pn: "OF20003", preco: 177.99 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 272.22 },
         { nome: "Limpeza do TBI", pn: "SERVIÇO", preco: 160.0 },
-        { nome: "Limpeza do Sistema de Freio", pn: "SERVIÇO", preco: 160.0 },
-        { nome: "Higienização do Ar Condicionado", pn: "SERVIÇO", preco: 266.95 },
+        { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 85.0 },
+        { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
         { nome: "Lubrificação das Partes Móveis", pn: "FT7088810", preco: 104.37 },
         { nome: "Oxisanitização", pn: "OXI", preco: 80.27 },
         { nome: "Limpeza Técnica do Motor", pn: "SERVIÇO", preco: 85.0 },
@@ -48,7 +48,7 @@ const serviçosAdicionais = {
 function initDate() {
     const dateDisplay = document.getElementById('current-date-display');
     if (!dateDisplay) return;
-    
+
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const today = new Date();
     let dateStr = today.toLocaleDateString('pt-BR', options);
@@ -72,14 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ocultar Loader e mostrar conteúdo principal
             mainLoader.classList.add('hidden');
             mainContent.classList.remove('hidden');
-            
+
             // Inicializar componentes
             initDate();
             initTabs();
             initRevisoes();
             initTabelaGeral();
             initTrocaOleo();
-            
+
             // Re-renderizar ícones
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
@@ -111,7 +111,7 @@ function showError(msg) {
 function compareCarNames(a, b) {
     const isTitanoA = a.toUpperCase().includes("TITANO");
     const isTitanoB = b.toUpperCase().includes("TITANO");
-    
+
     if (isTitanoA && isTitanoB) {
         const order = [
             "TITANO 2.2D MT (Antiga/9VC)",
@@ -151,14 +151,14 @@ function getRootModel(name) {
     if (nameUpper.includes("TITANO")) return "TITANO";
     if (nameUpper.includes("TORO")) return "TORO";
     if (nameUpper.includes("UNO")) return "UNO";
-    
+
     return name.split(" ")[0].toUpperCase();
 }
 
 function parseVersionName(fullName) {
     const root = getRootModel(fullName);
     let rest = fullName;
-    
+
     if (fullName.toUpperCase().startsWith(root)) {
         rest = fullName.substring(root.length).trim();
     } else if (fullName.toUpperCase().startsWith("NOVA " + root)) {
@@ -170,32 +170,32 @@ function parseVersionName(fullName) {
     } else if (fullName.toUpperCase().startsWith("GRAND SIENA")) {
         rest = fullName.substring("GRAND SIENA".length).trim();
     }
-    
+
     let title = rest;
     let subtitle = "";
-    
+
     const myIndex = rest.toUpperCase().indexOf("MY");
     const ateIndex = rest.toUpperCase().indexOf("ATÉ");
     const parenIndex = rest.indexOf("(");
-    
+
     let splitIndex = -1;
     if (myIndex !== -1) splitIndex = myIndex;
     if (ateIndex !== -1 && (splitIndex === -1 || ateIndex < splitIndex)) splitIndex = ateIndex;
     if (parenIndex !== -1 && (splitIndex === -1 || parenIndex < splitIndex)) splitIndex = parenIndex;
-    
+
     if (splitIndex !== -1) {
         title = rest.substring(0, splitIndex).trim();
         subtitle = rest.substring(splitIndex).trim();
-        
+
         if (subtitle.startsWith("(") && subtitle.endsWith(")")) {
             subtitle = subtitle.substring(1, subtitle.length - 1).trim();
         }
     }
-    
+
     if (!title) {
         title = fullName;
     }
-    
+
     return { title, subtitle };
 }
 
@@ -205,19 +205,19 @@ function parseVersionName(fullName) {
 function initTabs() {
     const tabs = document.querySelectorAll('.nav-tab');
     const contents = document.querySelectorAll('.tab-content');
-    
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.add('hidden'));
-            
+
             tab.classList.add('active');
             const targetId = tab.getAttribute('data-tab');
             const targetContent = document.getElementById(targetId);
             if (targetContent) {
                 targetContent.classList.remove('hidden');
             }
-            
+
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
@@ -232,11 +232,11 @@ function initRevisoes() {
     const searchInput = document.getElementById('rev-model-search');
     const rootListContainer = document.getElementById('rev-root-list-container');
     const listContainer = document.getElementById('rev-vehicle-list-container');
-    
+
     const carNames = Object.keys(fiatData.modelos)
         .filter(name => name.toLowerCase() !== '500e')
         .sort(compareCarNames);
-    
+
     const rootGroups = {};
     carNames.forEach((name) => {
         const root = getRootModel(name);
@@ -245,15 +245,15 @@ function initRevisoes() {
         }
         rootGroups[root].push(name);
     });
-    
+
     const rootModelsList = Object.keys(rootGroups).sort();
-    
+
     function renderRootList(filterText = '') {
         rootListContainer.innerHTML = '';
-        const filteredRoots = rootModelsList.filter(root => 
+        const filteredRoots = rootModelsList.filter(root =>
             root.toLowerCase().includes(filterText.toLowerCase())
         );
-        
+
         filteredRoots.forEach((root) => {
             const btn = document.createElement('button');
             btn.className = 'root-model-btn';
@@ -261,31 +261,31 @@ function initRevisoes() {
                 btn.classList.add('active');
             }
             btn.innerHTML = `<span>${root}</span>`;
-            
+
             btn.addEventListener('click', () => {
                 rootListContainer.querySelectorAll('.root-model-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 selectedRevRootModel = root;
                 renderVersionList();
             });
-            
+
             rootListContainer.appendChild(btn);
         });
     }
-    
+
     function renderVersionList() {
         listContainer.innerHTML = '';
         if (!selectedRevRootModel) return;
-        
+
         const versions = rootGroups[selectedRevRootModel] || [];
-        
+
         versions.forEach((name) => {
             const btn = document.createElement('button');
             btn.className = 'model-item-btn rev-model-btn';
             if (currentRevCar && currentRevCar.modelo === name) {
                 btn.classList.add('active');
             }
-            
+
             const parsed = parseVersionName(name);
             const subtitleHtml = parsed.subtitle ? `<span class="version-subtitle">${parsed.subtitle}</span>` : '';
             btn.innerHTML = `
@@ -295,7 +295,7 @@ function initRevisoes() {
                 </div>
                 <i data-lucide="chevron-right" class="chevron"></i>
             `;
-            
+
             btn.addEventListener('click', () => {
                 listContainer.querySelectorAll('.rev-model-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -303,16 +303,16 @@ function initRevisoes() {
             });
             listContainer.appendChild(btn);
         });
-        
+
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
     }
-    
+
     searchInput.addEventListener('input', (e) => {
         renderRootList(e.target.value);
     });
-    
+
     if (rootModelsList.length > 0) {
         selectedRevRootModel = rootModelsList.includes("TORO") ? "TORO" : rootModelsList[0];
         renderRootList();
@@ -324,15 +324,15 @@ function selectRevCar(carName) {
     try {
         currentRevCar = fiatData.modelos[carName];
         selectedRevIndex = 0;
-        
+
         document.getElementById('rev-car-name').innerText = currentRevCar.modelo;
-        
+
         const welcomeCover = document.getElementById('rev-welcome-cover');
         const dataContainer = document.getElementById('rev-data-container');
-        
+
         if (welcomeCover) welcomeCover.style.display = 'none';
         if (dataContainer) dataContainer.style.display = 'block';
-        
+
         renderRevKmGrid();
         renderRevisionDetails(0);
     } catch (err) {
@@ -344,24 +344,24 @@ function selectRevCar(carName) {
 function renderRevKmGrid() {
     const kmGrid = document.getElementById('rev-km-grid');
     kmGrid.innerHTML = '';
-    
+
     currentRevCar.revisoes.forEach((revName, idx) => {
         const kmLabel = currentRevCar.quilometragens[idx] || `${idx + 1}a`;
-        
+
         const btn = document.createElement('button');
         btn.className = 'km-btn';
         if (selectedRevIndex === idx) {
             btn.classList.add('active');
         }
         btn.innerText = kmLabel;
-        
+
         btn.addEventListener('click', () => {
             kmGrid.querySelectorAll('.km-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             selectedRevIndex = idx;
             renderRevisionDetails(idx);
         });
-        
+
         kmGrid.appendChild(btn);
     });
 }
@@ -376,11 +376,15 @@ function selectPackage(packageName) {
 function renderRevisionDetails(revIdx) {
     const revName = currentRevCar.revisoes[revIdx];
     const totalPrice = currentRevCar.custos_totais[revIdx] || 0;
-    
-    // Cálculo dos preços dos pacotes (Acréscimos Reais solicitados pelo usuário)
-    const priceBasico = totalPrice + 695.0;
-    const priceIntermediario = totalPrice + 1066.0;
-    const pricePremium = totalPrice + 1364.0;
+
+    // Cálculo dos preços dos pacotes (Acréscimos Reais calculados dinamicamente)
+    const adicionaisBasico = serviçosAdicionais.basico.reduce((sum, item) => sum + item.preco, 0);
+    const adicionaisIntermediario = serviçosAdicionais.intermediario.reduce((sum, item) => sum + item.preco, 0);
+    const adicionaisPremium = serviçosAdicionais.premium.reduce((sum, item) => sum + item.preco, 0);
+
+    const priceBasico = totalPrice + adicionaisBasico;
+    const priceIntermediario = totalPrice + adicionaisIntermediario;
+    const pricePremium = totalPrice + adicionaisPremium;
 
     // Atualização dos valores exibidos nos boxes
     const priceBasicoElem = document.getElementById('price-basico');
@@ -408,18 +412,18 @@ function renderRevisionDetails(revIdx) {
 
     const partsTableBody = document.getElementById('rev-parts-table-body');
     partsTableBody.innerHTML = '';
-    
+
     let subtotalPecas = 0;
     let moHoras = 0;
     let moPrecoHora = 349.0;
     let moSubtotal = 0;
     let indexItem = 0;
     let totalPecasExibidas = 0;
-    
+
     currentRevCar.itens.forEach(item => {
         const qty = item.trocas[revName];
         const custo = item.custos[revName];
-        
+
         if (item.tipo === 'serviço') {
             if (qty !== undefined && qty > 0) {
                 moHoras = parseFloat(qty) || 0;
@@ -430,14 +434,14 @@ function renderRevisionDetails(revIdx) {
             const precoUnit = parseFloat(item.preco_unitario) || 0;
             const itemQty = (qty !== undefined && qty > 0) ? qty : 0;
             const totalItem = (qty !== undefined && qty > 0) ? (parseFloat(custo) || (qty * precoUnit)) : 0;
-            
+
             subtotalPecas += totalItem;
-            
+
             // Só exibe o componente na lista se a quantidade for maior que zero (se for trocado nesta revisão)
             if (itemQty > 0) {
                 const tr = document.createElement('tr');
                 const textStyle = 'class="text-right td-highlight"';
-                
+
                 tr.innerHTML = `
                     <td class="item-name-cell" data-label="Componente">${item.nome}</td>
                     <td data-label="Código (PN)"><span class="item-pn">${item.pn}</span></td>
@@ -451,7 +455,7 @@ function renderRevisionDetails(revIdx) {
             }
         }
     });
-    
+
     // Injetar os itens adicionais de serviço correspondentes ao pacote selecionado na tabela
     const adicionais = serviçosAdicionais[selectedPackageName] || [];
     adicionais.forEach(item => {
@@ -460,7 +464,7 @@ function renderRevisionDetails(revIdx) {
         if (selectedPackageName === 'basico') packageColor = '#6b7280';
         else if (selectedPackageName === 'intermediario') packageColor = '#22c55e';
         else if (selectedPackageName === 'premium') packageColor = '#ef4444';
-        
+
         tr.innerHTML = `
             <td class="item-name-cell" data-label="Componente" style="font-weight: 600; color: ${packageColor};">${item.nome}</td>
             <td data-label="Código (PN)"><span class="item-pn" style="background-color: rgba(0, 0, 0, 0.04); color: ${packageColor}; border-color: rgba(0, 0, 0, 0.08);">${item.pn}</span></td>
@@ -471,7 +475,7 @@ function renderRevisionDetails(revIdx) {
         partsTableBody.appendChild(tr);
         totalPecasExibidas++;
     });
-    
+
     if (totalPecasExibidas === 0) {
         partsTableBody.innerHTML = `
             <tr>
@@ -481,32 +485,32 @@ function renderRevisionDetails(revIdx) {
             </tr>
         `;
     }
-    
+
     document.getElementById('rev-parts-count').innerText = `${indexItem + adicionais.length} item(ns) total(is)`;
-    
+
     document.getElementById('rev-mo-hours').innerText = `${moHoras.toFixed(2)}h`;
     document.getElementById('rev-mo-rate').innerText = formatCurrency(moPrecoHora);
     document.getElementById('rev-mo-subtotal').innerText = formatCurrency(moSubtotal);
-    
+
     // Lógica do resumo consolidado do pacote
     let finalPrice = totalPrice;
     let adjustmentAmount = 0;
     let adjustmentLabel = '';
     let packageColor = '';
-    
+
     if (selectedPackageName === 'basico') {
         finalPrice = priceBasico;
-        adjustmentAmount = 695.0;
+        adjustmentAmount = adicionaisBasico;
         adjustmentLabel = 'Adicionais Pacote Básico:';
         packageColor = '#6b7280';
     } else if (selectedPackageName === 'intermediario') {
         finalPrice = priceIntermediario;
-        adjustmentAmount = 1066.0;
+        adjustmentAmount = adicionaisIntermediario;
         adjustmentLabel = 'Adicionais Pacote Intermediário:';
         packageColor = '#22c55e';
     } else if (selectedPackageName === 'premium') {
         finalPrice = pricePremium;
-        adjustmentAmount = 1364.0;
+        adjustmentAmount = adicionaisPremium;
         adjustmentLabel = 'Adicionais Pacote Premium:';
         packageColor = '#ef4444';
     }
@@ -527,7 +531,7 @@ function renderRevisionDetails(revIdx) {
             packageRow.style.display = 'none';
         }
     }
-    
+
     document.getElementById('rev-sum-parts-cost').innerText = formatCurrency(subtotalPecas);
     document.getElementById('rev-sum-mo-cost').innerText = formatCurrency(moSubtotal);
     document.getElementById('rev-sum-total-cost').innerText = formatCurrency(finalPrice);
@@ -539,9 +543,9 @@ function renderRevisionDetails(revIdx) {
 // ==========================================
 function initTabelaGeral() {
     const searchInput = document.getElementById('tabela-geral-search-input');
-    
+
     renderTabelaGeral();
-    
+
     searchInput.addEventListener('input', (e) => {
         renderTabelaGeral(e.target.value);
     });
@@ -550,23 +554,23 @@ function initTabelaGeral() {
 function renderTabelaGeral(filterText = '') {
     const tbody = document.getElementById('tabela-geral-body');
     tbody.innerHTML = '';
-    
+
     const carNames = Object.keys(fiatData.modelos)
         .filter(name => name.toLowerCase() !== '500e')
         .sort(compareCarNames);
-    
+
     carNames.forEach(name => {
         if (filterText && !name.toLowerCase().includes(filterText.toLowerCase())) {
             return;
         }
-        
+
         const car = fiatData.modelos[name];
         const tr = document.createElement('tr');
         tr.className = 'highlight-row';
-        
+
         let revCells = '';
         let totalAcumulado10 = 0;
-        
+
         for (let i = 0; i < 10; i++) {
             const cost = car.custos_totais[i];
             if (cost !== undefined) {
@@ -576,13 +580,13 @@ function renderTabelaGeral(filterText = '') {
                 revCells += `<td class="text-right" style="color: var(--text-muted);">-</td>`;
             }
         }
-        
+
         tr.innerHTML = `
             <td class="item-name-cell" style="font-weight: 600;">${name}</td>
             ${revCells}
             <td class="text-right td-total-highlight" style="color: var(--accent-red); font-weight: 700;">${formatCurrency(totalAcumulado10)}</td>
         `;
-        
+
         tbody.appendChild(tr);
     });
 }
@@ -594,11 +598,11 @@ function initTrocaOleo() {
     const searchInput = document.getElementById('oil-model-search');
     const rootListContainer = document.getElementById('oil-root-list-container');
     const listContainer = document.getElementById('oil-vehicle-list-container');
-    
+
     const carNames = Object.keys(fiatData.modelos)
         .filter(name => name.toLowerCase() !== '500e' && name.toLowerCase() !== 'e-scudo')
         .sort(compareCarNames);
-        
+
     const rootGroups = {};
     carNames.forEach((name) => {
         const root = getRootModel(name);
@@ -607,15 +611,15 @@ function initTrocaOleo() {
         }
         rootGroups[root].push(name);
     });
-    
+
     const rootModelsList = Object.keys(rootGroups).sort();
-    
+
     function renderRootList(filterText = '') {
         rootListContainer.innerHTML = '';
-        const filteredRoots = rootModelsList.filter(root => 
+        const filteredRoots = rootModelsList.filter(root =>
             root.toLowerCase().includes(filterText.toLowerCase())
         );
-        
+
         filteredRoots.forEach((root) => {
             const btn = document.createElement('button');
             btn.className = 'root-model-btn';
@@ -623,32 +627,32 @@ function initTrocaOleo() {
                 btn.classList.add('active');
             }
             btn.innerHTML = `<span>${root}</span>`;
-            
+
             btn.addEventListener('click', () => {
                 rootListContainer.querySelectorAll('.root-model-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 selectedRootModel = root;
                 renderVersionList();
             });
-            
+
             rootListContainer.appendChild(btn);
         });
     }
-    
+
     function renderVersionList() {
         listContainer.innerHTML = '';
-        
+
         if (!selectedRootModel) return;
-        
+
         const versions = rootGroups[selectedRootModel] || [];
-        
+
         versions.forEach((name) => {
             const btn = document.createElement('button');
             btn.className = 'model-item-btn oil-model-btn';
             if (currentOilCar && currentOilCar.modelo === name) {
                 btn.classList.add('active');
             }
-            
+
             const parsed = parseVersionName(name);
             const subtitleHtml = parsed.subtitle ? `<span class="version-subtitle">${parsed.subtitle}</span>` : '';
             btn.innerHTML = `
@@ -658,7 +662,7 @@ function initTrocaOleo() {
                 </div>
                 <i data-lucide="chevron-right" class="chevron"></i>
             `;
-            
+
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.oil-model-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -666,16 +670,16 @@ function initTrocaOleo() {
             });
             listContainer.appendChild(btn);
         });
-        
+
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
     }
-    
+
     searchInput.addEventListener('input', (e) => {
         renderRootList(e.target.value);
     });
-    
+
     if (rootModelsList.length > 0) {
         selectedRootModel = rootModelsList.includes("TORO") ? "TORO" : rootModelsList[0];
         renderRootList();
@@ -686,104 +690,104 @@ function initTrocaOleo() {
 function selectOilCar(carName) {
     try {
         currentOilCar = fiatData.modelos[carName];
-        
+
         let defaultHours = 0.15;
         const nameLower = carName.toLowerCase();
-        if (nameLower.includes('titano') || 
-            nameLower.includes('scudo') || 
-            nameLower.includes('toro') || 
+        if (nameLower.includes('titano') ||
+            nameLower.includes('scudo') ||
+            nameLower.includes('toro') ||
             nameLower.includes('ducato')) {
             defaultHours = 0.30;
         }
-        
+
         document.getElementById('oil-car-name').innerText = currentOilCar.modelo;
-        
+
         const welcomeCover = document.getElementById('oil-welcome-cover');
         const combustionContainer = document.getElementById('oil-combustion-container');
         const electricAlert = document.getElementById('oil-electric-alert');
-        
+
         if (welcomeCover) welcomeCover.style.display = 'none';
-        
+
         const isElectric = carName.toLowerCase() === '500e' || carName.toLowerCase() === 'e-scudo';
         if (isElectric) {
             combustionContainer.style.display = 'none';
             electricAlert.style.display = 'block';
             electricAlert.classList.remove('hidden');
-            
+
             const pElem = electricAlert.querySelector('p');
             if (pElem) {
                 pElem.innerHTML = `
                     O <strong>${currentOilCar.modelo}</strong> utiliza propulsão 100% elétrica. Por não possuir motor a combustão interna, ele <strong>não necessita de óleo lubrificante de motor</strong> nem filtro de óleo, resultando em um custo de <strong>R$ 0,00</strong> para este serviço.
                 `;
             }
-            
+
             document.getElementById('oil-total-price').innerText = 'R$ 0,00';
             return;
         }
-        
+
         combustionContainer.style.display = 'block';
         combustionContainer.classList.remove('hidden');
         electricAlert.style.display = 'none';
-        
+
         const partsTableBody = document.getElementById('oil-parts-table-body');
         partsTableBody.innerHTML = '';
-        
+
         const firstRevName = currentOilCar.revisoes[0];
-        
+
         let subtotalPecas = 0;
         let moHoras = 0;
         let moPrecoHora = 0;
         let moSubtotal = 0;
         let indexItem = 0;
-        
+
         currentOilCar.itens.forEach(item => {
             const qty = item.trocas[firstRevName];
             const custo = item.custos[firstRevName];
-            
+
             if (item.tipo === 'serviço' && qty !== undefined && qty > 0) {
                 moHoras = defaultHours;
                 moPrecoHora = parseFloat(item.preco_unitario) || 0;
                 moSubtotal = moHoras * moPrecoHora;
             }
-            
+
             const nameLower = item.nome.toLowerCase();
-            
-            const isFiltroOleo = item.tipo === 'peça' && 
-                (nameLower.includes('filtro de óleo') || 
-                 nameLower.includes('filtro óleo') || 
-                 nameLower.includes('filtro de oleo') || 
-                 nameLower.includes('filtro oleo') || 
-                 nameLower.includes('filtrante do filtro óleo') || 
-                 nameLower.includes('filtrante do óleo') || 
-                 nameLower.includes('filtrante de óleo') ||
-                 nameLower.includes('filtrante de oleo') ||
-                 nameLower.includes('filtrante do filtro oleo') ||
-                 nameLower.includes('filtrante do oleo'));
-                 
-            const isOleoMotor = item.tipo === 'peça' && 
-                (nameLower.includes('mopar maxpro') || 
-                 nameLower.includes('oleo motor') || 
-                 nameLower.includes('óleo motor') || 
-                 nameLower.includes('selenia') || 
-                 nameLower.includes('ineo') || 
-                 nameLower.includes('0w20') || 
-                 nameLower.includes('5w30') || 
-                 nameLower.includes('0w30')) && 
-                !(nameLower.includes('cambio') || 
-                  nameLower.includes('câmbio') || 
-                  nameLower.includes('diferencial') || 
-                  nameLower.includes('freio') || 
-                  nameLower.includes('caixa') || 
-                  nameLower.includes('transferência') || 
-                  nameLower.includes('direção'));
-                  
+
+            const isFiltroOleo = item.tipo === 'peça' &&
+                (nameLower.includes('filtro de óleo') ||
+                    nameLower.includes('filtro óleo') ||
+                    nameLower.includes('filtro de oleo') ||
+                    nameLower.includes('filtro oleo') ||
+                    nameLower.includes('filtrante do filtro óleo') ||
+                    nameLower.includes('filtrante do óleo') ||
+                    nameLower.includes('filtrante de óleo') ||
+                    nameLower.includes('filtrante de oleo') ||
+                    nameLower.includes('filtrante do filtro oleo') ||
+                    nameLower.includes('filtrante do oleo'));
+
+            const isOleoMotor = item.tipo === 'peça' &&
+                (nameLower.includes('mopar maxpro') ||
+                    nameLower.includes('oleo motor') ||
+                    nameLower.includes('óleo motor') ||
+                    nameLower.includes('selenia') ||
+                    nameLower.includes('ineo') ||
+                    nameLower.includes('0w20') ||
+                    nameLower.includes('5w30') ||
+                    nameLower.includes('0w30')) &&
+                !(nameLower.includes('cambio') ||
+                    nameLower.includes('câmbio') ||
+                    nameLower.includes('diferencial') ||
+                    nameLower.includes('freio') ||
+                    nameLower.includes('caixa') ||
+                    nameLower.includes('transferência') ||
+                    nameLower.includes('direção'));
+
             if (isFiltroOleo || isOleoMotor) {
                 const itemQty = (qty !== undefined && qty > 0) ? qty : 1;
                 const precoUnit = parseFloat(item.preco_unitario) || 0;
                 const totalItem = (custo !== undefined && qty !== undefined && qty > 0) ? parseFloat(custo) : (itemQty * precoUnit);
-                
+
                 subtotalPecas += totalItem;
-                
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="item-name-cell" data-label="Componente">${item.nome}</td>
@@ -796,7 +800,7 @@ function selectOilCar(carName) {
                 indexItem++;
             }
         });
-        
+
         if (indexItem === 0) {
             partsTableBody.innerHTML = `
                 <tr>
@@ -806,19 +810,19 @@ function selectOilCar(carName) {
                 </tr>
             `;
         }
-        
+
         if (moSubtotal === 0) {
             moHoras = defaultHours;
-            moPrecoHora = 349.0; 
+            moPrecoHora = 349.0;
             moSubtotal = moHoras * moPrecoHora;
         }
-        
+
         const custoTotalTroca = subtotalPecas + moSubtotal;
-        
+
         document.getElementById('oil-mo-hours').innerText = `${moHoras.toFixed(2)}h`;
         document.getElementById('oil-mo-rate').innerText = formatCurrency(moPrecoHora);
         document.getElementById('oil-mo-subtotal').innerText = formatCurrency(moSubtotal);
-        
+
         document.getElementById('oil-sum-parts-cost').innerText = formatCurrency(subtotalPecas);
         document.getElementById('oil-sum-mo-cost').innerText = formatCurrency(moSubtotal);
         document.getElementById('oil-sum-total-cost').innerText = formatCurrency(custoTotalTroca);

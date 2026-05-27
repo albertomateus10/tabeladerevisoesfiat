@@ -1047,6 +1047,21 @@ footer {
 
 /* Responsividade geral (Celular / Telas abaixo de 768px) */
 @media (max-width: 767px) {
+    .brand-section {
+        display: none !important;
+    }
+    #current-date-display {
+        display: none !important;
+    }
+    header {
+        justify-content: center;
+        padding: 0.85rem 1rem;
+    }
+    .header-controls {
+        width: 100%;
+        justify-content: center;
+        gap: 0;
+    }
     .brand-logo-img {
         display: none;
     }

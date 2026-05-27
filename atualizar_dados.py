@@ -273,6 +273,32 @@ for sheet_name in sheet_names[1:]:
                 "custos": custos_itens
             })
             
+        # Aplicar regras gerais de alteração de quantidade de óleo: 2.54 -> 2.6 e 3.36 -> 3.4
+        for item in itens:
+            name_lower = item["nome"].lower()
+            is_oleo_or_matching = (
+                item["tipo"] == "peça" and 
+                not any(x in name_lower for x in ["filtro", "filtrante"]) and 
+                (
+                    any(y in name_lower for y in ["óleo", "oleo", "0w20", "5w30", "0w30", "maxpro", "synthetic", "ineo", "selenia"]) or
+                    item["pn"] in ["7092778", "7092779", "7094487"]
+                )
+            )
+            if is_oleo_or_matching:
+                for r_name in list(item["trocas"].keys()):
+                    try:
+                        val = float(item["trocas"][r_name])
+                        if abs(val - 2.54) < 0.001:
+                            item["trocas"][r_name] = 2.6
+                            if r_name in item["custos"] and isinstance(item["preco_unitario"], (int, float)):
+                                item["custos"][r_name] = round(2.6 * item["preco_unitario"], 2)
+                        elif abs(val - 3.36) < 0.001:
+                            item["trocas"][r_name] = 3.4
+                            if r_name in item["custos"] and isinstance(item["preco_unitario"], (int, float)):
+                                item["custos"][r_name] = round(3.4 * item["preco_unitario"], 2)
+                    except:
+                        pass
+
         # Aplicar regras customizadas de óleo para Ducato e Ducato X250 2.2D
         if nome_modelo == "DUCATO":
             for item in itens:

@@ -1004,8 +1004,49 @@ footer {
     margin-top: 2rem;
 }
 
-/* Responsividade geral */
-@media (max-width: 991px) {
+/* Otimizações específicas para Tablet (Lado a lado com dimensões compactas) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .dashboard-layout {
+        grid-template-columns: 160px 170px 1fr;
+        gap: 0.75rem;
+    }
+    
+    .sidebar {
+        padding: 0.75rem;
+    }
+    
+    .brand-section {
+        gap: 4px;
+    }
+    
+    .brand-logo-img {
+        height: 34px;
+    }
+    
+    .brand-developed {
+        font-size: 0.62rem;
+    }
+    
+    .price-boxes-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        gap: 0.5rem;
+    }
+    
+    .car-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .price-display-box {
+        align-items: flex-start;
+        min-width: 100%;
+    }
+}
+
+/* Responsividade geral (Celular / Telas abaixo de 768px) */
+@media (max-width: 767px) {
     body {
         height: auto;
         overflow: auto;
@@ -1044,7 +1085,7 @@ footer {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     main {
         padding: 1rem;
     }
@@ -1473,7 +1514,7 @@ footer {
 }
 
 /* Responsividade de Grade para Telas Menores */
-@media (max-width: 991px) {
+@media (max-width: 767px) {
     .price-boxes-container {
         display: grid;
         grid-template-columns: 1fr 1fr;

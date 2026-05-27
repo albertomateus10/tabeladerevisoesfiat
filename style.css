@@ -1020,7 +1020,7 @@ footer {
     }
     
     .brand-logo-img {
-        height: 34px;
+        display: none;
     }
     
     .brand-developed {
@@ -1047,6 +1047,9 @@ footer {
 
 /* Responsividade geral (Celular / Telas abaixo de 768px) */
 @media (max-width: 767px) {
+    .brand-logo-img {
+        display: none;
+    }
     body {
         height: auto;
         overflow: auto;

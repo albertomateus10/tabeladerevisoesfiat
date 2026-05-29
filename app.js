@@ -13,6 +13,7 @@ let currentRevCar = null;
 let selectedRevRootModel = null;
 let selectedRevIndex = 0;
 let selectedPackageName = 'fabrica';
+let adicionaisDesmarcados = {};
 
 // Itens e preços de acréscimo para os pacotes de serviço
 const serviçosAdicionais = {
@@ -324,6 +325,7 @@ function selectRevCar(carName) {
     try {
         currentRevCar = fiatData.modelos[carName];
         selectedRevIndex = 0;
+        adicionaisDesmarcados = {};
 
         document.getElementById('rev-car-name').innerText = currentRevCar.modelo;
 
@@ -368,19 +370,38 @@ function renderRevKmGrid() {
 
 function selectPackage(packageName) {
     selectedPackageName = packageName;
+    adicionaisDesmarcados = {};
     if (currentRevCar) {
         renderRevisionDetails(selectedRevIndex);
     }
 }
+
+window.toggleServicoAdicional = function(nomeServico, event) {
+    if (event) event.stopPropagation();
+    adicionaisDesmarcados[nomeServico] = !adicionaisDesmarcados[nomeServico];
+    if (currentRevCar) {
+        renderRevisionDetails(selectedRevIndex);
+    }
+};
 
 function renderRevisionDetails(revIdx) {
     const revName = currentRevCar.revisoes[revIdx];
     const totalPrice = currentRevCar.custos_totais[revIdx] || 0;
 
     // Cálculo dos preços dos pacotes (Acréscimos Reais calculados dinamicamente)
-    const adicionaisBasico = serviçosAdicionais.basico.reduce((sum, item) => sum + item.preco, 0);
-    const adicionaisIntermediario = serviçosAdicionais.intermediario.reduce((sum, item) => sum + item.preco, 0);
-    const adicionaisPremium = serviçosAdicionais.premium.reduce((sum, item) => sum + item.preco, 0);
+    const getAdicionaisPreco = (packageName) => {
+        const itens = serviçosAdicionais[packageName] || [];
+        return itens.reduce((sum, item) => {
+            if (adicionaisDesmarcados[item.nome]) {
+                return sum;
+            }
+            return sum + item.preco;
+        }, 0);
+    };
+
+    const adicionaisBasico = getAdicionaisPreco('basico');
+    const adicionaisIntermediario = getAdicionaisPreco('intermediario');
+    const adicionaisPremium = getAdicionaisPreco('premium');
 
     const priceBasico = totalPrice + adicionaisBasico;
     const priceIntermediario = totalPrice + adicionaisIntermediario;
@@ -465,12 +486,36 @@ function renderRevisionDetails(revIdx) {
         else if (selectedPackageName === 'intermediario') packageColor = '#22c55e';
         else if (selectedPackageName === 'premium') packageColor = '#ef4444';
 
+        const isDesmarcado = !!adicionaisDesmarcados[item.nome];
+        const buttonIcon = isDesmarcado ? 'plus' : 'x';
+        const buttonTitle = isDesmarcado ? `Marcar ${item.nome}` : `Desmarcar ${item.nome}`;
+        const buttonClass = isDesmarcado ? 'btn-add-geo' : 'btn-remove-geo';
+
+        const cellNomeContent = `
+            <div class="geo-cell-container">
+                <span style="${isDesmarcado ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.nome}</span>
+                <button type="button" class="btn-toggle-geo ${buttonClass}" onclick="toggleServicoAdicional('${item.nome}', event)" title="${buttonTitle}">
+                    <i data-lucide="${buttonIcon}"></i>
+                </button>
+            </div>
+        `;
+
+        let cellQtdContent = '1';
+        let cellSubtotalContent = formatCurrency(item.preco);
+        let extraRowStyle = '';
+
+        if (isDesmarcado) {
+            cellQtdContent = '0';
+            cellSubtotalContent = formatCurrency(0);
+            extraRowStyle = ' style="opacity: 0.5;"';
+        }
+
         tr.innerHTML = `
-            <td class="item-name-cell" data-label="Componente" style="font-weight: 600; color: ${packageColor};">${item.nome}</td>
-            <td data-label="Código (PN)"><span class="item-pn" style="background-color: rgba(0, 0, 0, 0.04); color: ${packageColor}; border-color: rgba(0, 0, 0, 0.08);">${item.pn}</span></td>
-            <td class="text-right" data-label="Preço Unit.">${formatCurrency(item.preco)}</td>
-            <td class="text-right td-highlight" style="color: ${packageColor};" data-label="QTD">1</td>
-            <td class="text-right td-highlight" style="color: ${packageColor};" data-label="Subtotal">${formatCurrency(item.preco)}</td>
+            <td class="item-name-cell" data-label="Componente" style="font-weight: 600; color: ${packageColor};"${extraRowStyle}>${cellNomeContent}</td>
+            <td data-label="Código (PN)"${extraRowStyle}><span class="item-pn" style="background-color: rgba(0, 0, 0, 0.04); color: ${packageColor}; border-color: rgba(0, 0, 0, 0.08);">${item.pn}</span></td>
+            <td class="text-right"${extraRowStyle} data-label="Preço Unit.">${formatCurrency(item.preco)}</td>
+            <td class="text-right td-highlight"${extraRowStyle} style="color: ${packageColor};" data-label="QTD">${cellQtdContent}</td>
+            <td class="text-right td-highlight"${extraRowStyle} style="color: ${packageColor};" data-label="Subtotal">${cellSubtotalContent}</td>
         `;
         partsTableBody.appendChild(tr);
         totalPecasExibidas++;
@@ -535,6 +580,11 @@ function renderRevisionDetails(revIdx) {
     document.getElementById('rev-sum-parts-cost').innerText = formatCurrency(subtotalPecas);
     document.getElementById('rev-sum-mo-cost').innerText = formatCurrency(moSubtotal);
     document.getElementById('rev-sum-total-cost').innerText = formatCurrency(finalPrice);
+
+    // Re-renderizar ícones Lucide para garantir que o ícone do botão seja desenhado
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 

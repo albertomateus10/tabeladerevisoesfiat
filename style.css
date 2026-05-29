@@ -1555,3 +1555,52 @@ footer {
     height: 100%;
     overflow: hidden;
 }
+
+/* Botão de Toggle da Geometria e Balanceamento */
+.geo-cell-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-toggle-geo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 0;
+}
+
+.btn-toggle-geo i {
+    width: 12px;
+    height: 12px;
+    stroke-width: 3;
+}
+
+.btn-remove-geo {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.btn-remove-geo:hover {
+    background-color: #ef4444;
+    color: white;
+    transform: scale(1.1);
+}
+
+.btn-add-geo {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.btn-add-geo:hover {
+    background-color: #22c55e;
+    color: white;
+    transform: scale(1.1);
+}
+

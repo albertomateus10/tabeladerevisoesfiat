@@ -487,16 +487,12 @@ function renderRevisionDetails(revIdx) {
         else if (selectedPackageName === 'premium') packageColor = '#ef4444';
 
         const isDesmarcado = !!adicionaisDesmarcados[item.nome];
-        const buttonIcon = isDesmarcado ? 'plus' : 'x';
-        const buttonTitle = isDesmarcado ? `Marcar ${item.nome}` : `Desmarcar ${item.nome}`;
-        const buttonClass = isDesmarcado ? 'btn-add-geo' : 'btn-remove-geo';
+        const buttonTitle = isDesmarcado ? `Clique para incluir ${item.nome}` : `Clique para desmarcar ${item.nome}`;
 
         const cellNomeContent = `
-            <div class="geo-cell-container">
-                <span style="${isDesmarcado ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.nome}</span>
-                <button type="button" class="btn-toggle-geo ${buttonClass}" onclick="toggleServicoAdicional('${item.nome}', event)" title="${buttonTitle}">
-                    <i data-lucide="${buttonIcon}"></i>
-                </button>
+            <div class="clickable-service-name ${isDesmarcado ? 'desmarcado' : ''}" onclick="toggleServicoAdicional('${item.nome}', event)" title="${buttonTitle}">
+                <span class="status-dot" style="background-color: ${isDesmarcado ? 'var(--text-muted)' : packageColor};"></span>
+                <span>${item.nome}</span>
             </div>
         `;
 

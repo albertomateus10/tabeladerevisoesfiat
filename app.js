@@ -58,24 +58,25 @@ function initDate() {
     dateDisplay.innerText = dateStr;
 }
 
-// Inicialização do contador de visitas persistente via localStorage
 function initVisitorCounter() {
     const counterElem = document.getElementById('visitor-count');
     if (!counterElem) return;
 
     let visits = localStorage.getItem('visitor_count');
-    if (!visits || parseInt(visits, 10) > 3000) {
-        // Se for a primeira visita ou se tivermos o valor de teste antigo (>3000), começa com 150
-        visits = 150;
+    if (!visits) {
+        visits = 0;
     } else {
         visits = parseInt(visits, 10);
+        if (isNaN(visits)) {
+            visits = 0;
+        }
     }
 
     // Incrementa para a visita atual
     visits += 1;
     localStorage.setItem('visitor_count', visits);
 
-    // Formata o número com separador de milhar pt-BR (ex: 151)
+    // Formata o número com separador de milhar pt-BR (ex: 1)
     counterElem.innerText = visits.toLocaleString('pt-BR');
 }
 

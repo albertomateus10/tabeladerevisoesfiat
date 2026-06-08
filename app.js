@@ -58,27 +58,6 @@ function initDate() {
     dateDisplay.innerText = dateStr;
 }
 
-function initVisitorCounter() {
-    const counterElem = document.getElementById('visitor-count');
-    if (!counterElem) return;
-
-    let visits = localStorage.getItem('visitor_count');
-    if (!visits) {
-        visits = 0;
-    } else {
-        visits = parseInt(visits, 10);
-        if (isNaN(visits)) {
-            visits = 0;
-        }
-    }
-
-    // Incrementa para a visita atual
-    visits += 1;
-    localStorage.setItem('visitor_count', visits);
-
-    // Formata o número com separador de milhar pt-BR (ex: 1)
-    counterElem.innerText = visits.toLocaleString('pt-BR');
-}
 
 // Inicialização da Aplicação
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Inicializar componentes
             initDate();
-            initVisitorCounter();
             initTabs();
             initRevisoes();
             initTabelaGeral();

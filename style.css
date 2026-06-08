@@ -169,38 +169,6 @@ header {
     gap: 4px;
 }
 
-/* Contador de Visitas Pílula */
-.visitor-counter {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 14px;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--card-border);
-    border-radius: 100px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.78rem;
-    color: #64748b;
-    transition: var(--transition-smooth);
-}
-
-.visitor-counter:hover {
-    border-color: rgba(255, 56, 56, 0.3);
-    box-shadow: 0 2px 6px rgba(255, 56, 56, 0.08);
-}
-
-.visitor-label {
-    font-weight: 500;
-    color: #64748b;
-}
-
-.visitor-number {
-    font-weight: 700;
-    color: #475569;
-}
-
-
 /* Abas de Navegação no Header */
 .nav-tabs {
     display: flex;

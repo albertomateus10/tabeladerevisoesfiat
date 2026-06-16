@@ -18,29 +18,28 @@ let adicionaisDesmarcados = {};
 // Itens e preços de acréscimo para os pacotes de serviço
 const serviçosAdicionais = {
     basico: [
-        { nome: "Limpeza do Bico Injetor", pn: "OF20003", preco: 177.99 },
+        { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
         { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
-        { nome: "Limpeza do TBI", pn: "SERVIÇO", preco: 160.0 },
+        { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
         { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 }
     ],
     intermediario: [
-        { nome: "Limpeza do Bico Injetor", pn: "OF20003", preco: 177.99 },
+        { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
         { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
-        { nome: "Limpeza do TBI", pn: "SERVIÇO", preco: 160.0 },
+        { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
         { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 },
         { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
         { nome: "Lubrificação das Partes Móveis", pn: "FT7088810", preco: 104.37 },
     ],
     premium: [
-        { nome: "Limpeza do Bico Injetor", pn: "OF20003", preco: 177.99 },
+        { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
         { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
-        { nome: "Limpeza do TBI", pn: "SERVIÇO", preco: 160.0 },
+        { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
         { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 },
         { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
         { nome: "Lubrificação das Partes Móveis", pn: "FT7088810", preco: 104.37 },
         { nome: "Oxisanitização", pn: "OXI", preco: 80.27 },
-        { nome: "Limpeza Técnica do Motor", pn: "SERVIÇO", preco: 85.0 },
-        { nome: "Cristalizador de Motor", pn: "OF20021", preco: 107.35 },
+        { nome: "Limpeza Técnica do Motor", pn: "OF20021", preco: 107.35 },
         { nome: "Cristalizador de Para-brisa", pn: "OF20002", preco: 84.37 }
     ]
 };

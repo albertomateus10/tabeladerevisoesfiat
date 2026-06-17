@@ -228,6 +228,10 @@ for sheet_name in sheet_names[1:]:
                     preco_unit = float(preco_unit)
                 except ValueError:
                     pass
+            
+            # Forçar preço de R$ 89,60 para o óleo MOPAR MAXPRO 5W30 (SN/GF-5) Of20007
+            if pn == "Of20007":
+                preco_unit = 89.60
                     
             trocas = {}
             custos_itens = {}
@@ -250,6 +254,14 @@ for sheet_name in sheet_names[1:]:
                         custos_itens[rev_name] = float(cost_val)
                     except:
                         custos_itens[rev_name] = str(cost_val).strip()
+            
+            # Forçar recálculo dos custos de troca com base no novo preço unitário
+            if pn == "Of20007":
+                for r_name in trocas:
+                    try:
+                        custos_itens[r_name] = round(float(trocas[r_name]) * preco_unit, 2)
+                    except:
+                        pass
                         
             tipo = "peça"
             if "mão-de-obra" in desc.lower() or "mão de obra" in desc.lower() or "mo fiat" in pn.lower() or "tempo padrão" in desc.lower() or "total de mão de obra" in desc.lower():
@@ -390,6 +402,73 @@ for sheet_name in sheet_names[1:]:
             print(f"    [Sucesso] Mapeado com resumo nacional para '{nome_modelo}'")
         else:
             print(f"    [Aviso] '{nome_modelo}' não foi associado a um modelo na aba resumo nacional.")
+
+# 3. Segunda Passada: Cruzamento e correção de preços unitários faltantes por PN
+print("\nRealizando cruzamento de preços unitários por código de peça (PN)...")
+tabela_precos_por_pn = {}
+
+# Passo 3.1: Coletar todos os preços unitários válidos de peças
+for nome_modelo, modelo_info in data["modelos"].items():
+    for item in modelo_info["itens"]:
+        if item["tipo"] == "peça":
+            pn = item["pn"]
+            preco_unit = item["preco_unitario"]
+            if pn and pn != "MO FIAT" and preco_unit is not None and isinstance(preco_unit, (int, float)) and preco_unit > 0:
+                tabela_precos_por_pn[pn] = preco_unit
+
+print(f"  -> Coletados {len(tabela_precos_por_pn)} preços unitários válidos para cruzamento.")
+
+# Passo 3.2: Corrigir itens com preço unitário ausente (None ou <= 0)
+num_itens_corrigidos = 0
+for nome_modelo, modelo_info in data["modelos"].items():
+    modelo_alterado = False
+    
+    for item in modelo_info["itens"]:
+        if item["tipo"] == "peça" and (item["preco_unitario"] is None or item["preco_unitario"] <= 0):
+            pn = item["pn"]
+            if pn in tabela_precos_por_pn:
+                item["preco_unitario"] = tabela_precos_por_pn[pn]
+                num_itens_corrigidos += 1
+                modelo_alterado = True
+                
+                # Recalcular os custos de troca deste item para cada revisão
+                for r_name, qty in item["trocas"].items():
+                    if isinstance(qty, (int, float)) and qty > 0:
+                        item["custos"][r_name] = round(qty * item["preco_unitario"], 2)
+                        
+    # Se algum item foi alterado, precisamos recalcular os custos totais e preços nacionais do modelo
+    if modelo_alterado:
+        revisoes_lista = modelo_info["revisoes"]
+        custos_revisoes_totais = []
+        for i in range(len(revisoes_lista)):
+            rev_name = revisoes_lista[i]
+            soma_rev = 0.0
+            for item in modelo_info["itens"]:
+                if rev_name in item["custos"] and isinstance(item["custos"][rev_name], (int, float)):
+                    soma_rev += item["custos"][rev_name]
+            custos_revisoes_totais.append(round(soma_rev, 2))
+            
+        modelo_info["custos_totais"] = custos_revisoes_totais
+        
+        # Atualizar a tabela de preços nacionais para este modelo específico para manter consistência
+        matched_key = None
+        for pk in data["precos_nacionais"].keys():
+            if pk.lower().strip() == nome_modelo.lower().strip():
+                matched_key = pk
+                break
+                
+        if matched_key:
+            new_revisoes = {}
+            for idx, r_name in enumerate(revisoes_lista):
+                pk_rev_keys = list(data["precos_nacionais"][matched_key]["revisoes"].keys())
+                if idx < len(pk_rev_keys):
+                    rev_key = pk_rev_keys[idx]
+                    new_revisoes[rev_key] = custos_revisoes_totais[idx]
+            
+            data["precos_nacionais"][matched_key]["revisoes"] = new_revisoes
+            data["precos_nacionais"][matched_key]["total_acumulado"] = round(sum(custos_revisoes_totais[:10]), 2)
+
+print(f"  -> Concluído! Corrigidos {num_itens_corrigidos} itens com preços ausentes.")
 
 # Salvar o JSON consolidado
 with open(json_path, 'w', encoding='utf-8') as f:

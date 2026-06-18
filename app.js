@@ -388,6 +388,23 @@ function renderRevisionDetails(revIdx) {
     const revName = currentRevCar.revisoes[revIdx];
     const totalPrice = currentRevCar.custos_totais[revIdx] || 0;
 
+    // Calcular horas e subtotal de MO primeiro para usar no cálculo
+    let moHoras = 0;
+    let moPrecoHora = 349.0;
+    let moSubtotal = 0;
+
+    currentRevCar.itens.forEach(item => {
+        const qty = item.trocas[revName];
+        const custo = item.custos[revName];
+        if (item.tipo === 'serviço') {
+            if (qty !== undefined && qty > 0) {
+                moHoras = parseFloat(qty) || 0;
+                moPrecoHora = parseFloat(item.preco_unitario) || 349.0;
+                moSubtotal = parseFloat(custo) || (moHoras * moPrecoHora);
+            }
+        }
+    });
+
     // Cálculo dos preços dos pacotes (Acréscimos Reais calculados dinamicamente)
     const getAdicionaisPreco = (packageName) => {
         const itens = serviçosAdicionais[packageName] || [];
@@ -403,11 +420,13 @@ function renderRevisionDetails(revIdx) {
     const adicionaisIntermediario = getAdicionaisPreco('intermediario');
     const adicionaisPremium = getAdicionaisPreco('premium');
 
-    const priceBasico = totalPrice + adicionaisBasico;
-    const priceIntermediario = totalPrice + adicionaisIntermediario;
-    const pricePremium = totalPrice + adicionaisPremium;
+    // Base com MO incluída
+    const totalComMO = totalPrice + moSubtotal;
+    const priceBasico = totalComMO + adicionaisBasico;
+    const priceIntermediario = totalComMO + adicionaisIntermediario;
+    const pricePremium = totalComMO + adicionaisPremium;
 
-    // Atualização dos valores exibidos nos boxes
+    // Atualização dos valores exibidos nos boxes superiores
     const priceBasicoElem = document.getElementById('price-basico');
     const priceIntermediarioElem = document.getElementById('price-intermediario');
     const pricePremiumElem = document.getElementById('price-premium');
@@ -416,7 +435,7 @@ function renderRevisionDetails(revIdx) {
     if (priceBasicoElem) priceBasicoElem.innerText = formatCurrency(priceBasico);
     if (priceIntermediarioElem) priceIntermediarioElem.innerText = formatCurrency(priceIntermediario);
     if (pricePremiumElem) pricePremiumElem.innerText = formatCurrency(pricePremium);
-    if (priceFabricaElem) priceFabricaElem.innerText = formatCurrency(totalPrice);
+    if (priceFabricaElem) priceFabricaElem.innerText = formatCurrency(totalComMO);
 
     // Sincronizar classes de pacotes ativos/inativos no DOM
     const packages = ['basico', 'intermediario', 'premium', 'fabrica'];
@@ -435,9 +454,6 @@ function renderRevisionDetails(revIdx) {
     partsTableBody.innerHTML = '';
 
     let subtotalPecas = 0;
-    let moHoras = 0;
-    let moPrecoHora = 349.0;
-    let moSubtotal = 0;
     let indexItem = 0;
     let totalPecasExibidas = 0;
 
@@ -445,20 +461,13 @@ function renderRevisionDetails(revIdx) {
         const qty = item.trocas[revName];
         const custo = item.custos[revName];
 
-        if (item.tipo === 'serviço') {
-            if (qty !== undefined && qty > 0) {
-                moHoras = parseFloat(qty) || 0;
-                moPrecoHora = parseFloat(item.preco_unitario) || 349.0;
-                moSubtotal = parseFloat(custo) || (moHoras * moPrecoHora);
-            }
-        } else {
+        if (item.tipo !== 'serviço') {
             const precoUnit = parseFloat(item.preco_unitario) || 0;
             const itemQty = (qty !== undefined && qty > 0) ? qty : 0;
             const totalItem = (qty !== undefined && qty > 0) ? (parseFloat(custo) || (qty * precoUnit)) : 0;
 
             subtotalPecas += totalItem;
 
-            // Só exibe o componente na lista se a quantidade for maior que zero (se for trocado nesta revisão)
             if (itemQty > 0) {
                 const tr = document.createElement('tr');
                 const textStyle = 'class="text-right td-highlight"';
@@ -533,8 +542,8 @@ function renderRevisionDetails(revIdx) {
     document.getElementById('rev-mo-rate').innerText = formatCurrency(moPrecoHora);
     document.getElementById('rev-mo-subtotal').innerText = formatCurrency(moSubtotal);
 
-    // Lógica do resumo consolidado do pacote
-    let finalPrice = totalPrice;
+    // Lógica do resumo consolidado do pacote (já com MO incluída via totalComMO)
+    let finalPrice = totalComMO;
     let adjustmentAmount = 0;
     let adjustmentLabel = '';
     let packageColor = '';

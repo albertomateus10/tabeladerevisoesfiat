@@ -127,6 +127,19 @@ header {
     letter-spacing: -1px;
 }
 
+.brand-logo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.brand-logo-link:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
 .brand-logo-img {
     height: 40px;
     width: auto;

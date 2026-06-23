@@ -1,4 +1,4 @@
-// Obter os dados do escopo global expostos por fiat_data.js
+e// Obter os dados do escopo global expostos por fiat_data.js
 const fiatData = window.fiatData;
 
 // Elementos DOM principais
@@ -376,7 +376,7 @@ function selectPackage(packageName) {
     }
 }
 
-window.toggleServicoAdicional = function(nomeServico, event) {
+window.toggleServicoAdicional = function (nomeServico, event) {
     if (event) event.stopPropagation();
     adicionaisDesmarcados[nomeServico] = !adicionaisDesmarcados[nomeServico];
     if (currentRevCar) {
@@ -420,8 +420,8 @@ function renderRevisionDetails(revIdx) {
     const adicionaisIntermediario = getAdicionaisPreco('intermediario');
     const adicionaisPremium = getAdicionaisPreco('premium');
 
-    // Base com MO incluída (totalPrice já vem com a Mão de Obra do backend)
-    const totalComMO = totalPrice;
+    // Base com MO incluída
+    const totalComMO = totalPrice + moSubtotal;
     const priceBasico = totalComMO + adicionaisBasico;
     const priceIntermediario = totalComMO + adicionaisIntermediario;
     const pricePremium = totalComMO + adicionaisPremium;

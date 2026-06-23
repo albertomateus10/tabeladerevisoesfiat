@@ -420,8 +420,8 @@ function renderRevisionDetails(revIdx) {
     const adicionaisIntermediario = getAdicionaisPreco('intermediario');
     const adicionaisPremium = getAdicionaisPreco('premium');
 
-    // Base com MO incluída
-    const totalComMO = totalPrice + moSubtotal;
+    // Base com MO incluída (totalPrice já vem com a Mão de Obra do backend)
+    const totalComMO = totalPrice;
     const priceBasico = totalComMO + adicionaisBasico;
     const priceIntermediario = totalComMO + adicionaisIntermediario;
     const pricePremium = totalComMO + adicionaisPremium;

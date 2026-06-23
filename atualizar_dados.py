@@ -11,8 +11,10 @@ if sys.platform.startswith('win'):
 
 # Definir caminhos relativos ao local do script
 base_dir = os.path.dirname(os.path.abspath(__file__))
-excel_name = "Tabela Revisão Programada FIAT Março 2026.xlsx"
-excel_path = os.path.join(base_dir, excel_name)
+excel_name_marco = "Tabela Revisão Programada FIAT Março 2026.xlsx"
+excel_name_junho = "Tabela Revisão Programada FIAT Junho 2026.xlsx"
+excel_path_marco = os.path.join(base_dir, excel_name_marco)
+excel_path_junho = os.path.join(base_dir, excel_name_junho)
 json_path = os.path.join(base_dir, "fiat_revisoes_data.json")
 js_path = os.path.join(base_dir, "fiat_data.js")
 
@@ -35,28 +37,39 @@ print("==============================================================")
 print("     EXTRAÇÃO DE DADOS DE REVISÃO FIAT (MÚLTIPLOS MODELOS)")
 print("==============================================================")
 
-if not os.path.exists(excel_path):
-    print(f"\n[ERRO] O arquivo '{excel_name}' não foi encontrado na pasta!")
-    print(f"Caminho esperado: {excel_path}")
-    print("Por favor, coloque a planilha Excel correta nesta mesma pasta.")
+if not os.path.exists(excel_path_marco):
+    print(f"\n[ERRO] O arquivo '{excel_name_marco}' não foi encontrado na pasta!")
+    print(f"Caminho esperado: {excel_path_marco}")
     sys.exit(1)
 
-print(f"\nLendo arquivo Excel: {excel_name}...")
+if not os.path.exists(excel_path_junho):
+    print(f"\n[ERRO] O arquivo '{excel_name_junho}' não foi encontrado na pasta!")
+    print(f"Caminho esperado: {excel_path_junho}")
+    sys.exit(1)
+
+print(f"\nLendo arquivo Excel de Março: {excel_name_marco}...")
 try:
-    wb = openpyxl.load_workbook(excel_path, data_only=True)
+    wb_marco = openpyxl.load_workbook(excel_path_marco, data_only=True)
 except Exception as e:
-    print(f"\n[ERRO] Não foi possível abrir o arquivo Excel: {e}")
+    print(f"\n[ERRO] Não foi possível abrir o arquivo Excel de Março: {e}")
     sys.exit(1)
 
-sheet_names = wb.sheetnames
+print(f"Lendo arquivo Excel de Junho: {excel_name_junho}...")
+try:
+    wb_junho = openpyxl.load_workbook(excel_path_junho, data_only=True)
+except Exception as e:
+    print(f"\n[ERRO] Não foi possível abrir o arquivo Excel de Junho: {e}")
+    sys.exit(1)
+
+sheet_names_marco = wb_marco.sheetnames
 data = {
     "modelos": {}
 }
 
-# 1. Carregar preços nacionais da primeira aba (PREÇO NACIONAL)
+# 1. Carregar preços nacionais da primeira aba (PREÇO NACIONAL) de Março
 precos_nacionais = {}
-sheet_precos = wb[sheet_names[0]]
-print(f"Processando aba resumo: {sheet_names[0]}")
+sheet_precos = wb_marco[sheet_names_marco[0]]
+print(f"Processando aba resumo de Março: {sheet_names_marco[0]}")
 
 # Encontrar linha de cabeçalho na aba PREÇO NACIONAL
 header_row_idx = None
@@ -110,8 +123,13 @@ else:
 data["precos_nacionais"] = precos_nacionais
 
 # 2. Processar cada aba de veículo individual (incluindo abas com múltiplos blocos)
-for sheet_name in sheet_names[1:]:
-    sheet = wb[sheet_name]
+for sheet_name in sheet_names_marco[1:]:
+    if sheet_name in wb_junho.sheetnames:
+        sheet = wb_junho[sheet_name]
+        origem = "Junho"
+    else:
+        sheet = wb_marco[sheet_name]
+        origem = "Março"
     
     # Encontrar todas as linhas de cabeçalho do bloco (ITENS DE SUBSTITUIÇÃO OBRIGATÓRIA)
     header_rows = []
@@ -120,7 +138,7 @@ for sheet_name in sheet_names[1:]:
         if val and any(x in str(val).lower() for x in ['itens de substitui', 'itens de substituic', 'itens de substituição']):
             header_rows.append(r)
             
-    print(f"\nProcessando aba: '{sheet_name}' (contém {len(header_rows)} modelo(s))...")
+    print(f"\nProcessando aba: '{sheet_name}' de {origem} (contém {len(header_rows)} modelo(s))...")
     
     for idx_block, peças_header_row in enumerate(header_rows):
         # Determinar nome do modelo para este bloco
@@ -226,12 +244,12 @@ for sheet_name in sheet_names[1:]:
             if preco_unit is not None:
                 try:
                     preco_unit = float(preco_unit)
-                except ValueError:
-                    pass
+                except (ValueError, TypeError):
+                    preco_unit = None
             
-            # Forçar preço de R$ 89,60 para o óleo MOPAR MAXPRO 5W30 (SN/GF-5) Of20007
+            # Forçar preço de R$ 98,56 para o óleo MOPAR MAXPRO 5W30 (SN/GF-5) Of20007 (Atualizado em Junho)
             if pn == "Of20007":
-                preco_unit = 89.60
+                preco_unit = 98.56
                     
             trocas = {}
             custos_itens = {}
@@ -311,14 +329,14 @@ for sheet_name in sheet_names[1:]:
                     except:
                         pass
 
-        # Aplicar regras customizadas de óleo para Ducato e Ducato X250 2.2D
+        # Aplicar regras customizadas de óleo para Ducato e Ducato X250 2.2D (Preço atualizado em Junho para 110.26)
         if nome_modelo == "DUCATO":
             for item in itens:
                 name_lower = item["nome"].lower()
                 if item["tipo"] == "peça" and any(x in name_lower for x in ["óleo", "oleo"]) and "motor" in name_lower and not any(x in name_lower for x in ["filtro", "filtrante"]):
                     item["nome"] = "5W30"
                     item["pn"] = "7094487"
-                    item["preco_unitario"] = 91.54
+                    item["preco_unitario"] = 110.26
                     for r_name in list(item["trocas"].keys()):
                         try:
                             val = float(item["trocas"][r_name])
@@ -330,7 +348,7 @@ for sheet_name in sheet_names[1:]:
                         try:
                             val = float(item["custos"][r_name])
                             if val > 0:
-                                item["custos"][r_name] = round(5.6 * 91.54, 2)
+                                item["custos"][r_name] = round(5.6 * 110.26, 2)
                         except:
                             pass
         elif nome_modelo == "DUCATO X250 2.2D":
@@ -339,7 +357,7 @@ for sheet_name in sheet_names[1:]:
                 if item["tipo"] == "peça" and any(x in name_lower for x in ["óleo", "oleo"]) and "motor" in name_lower and not any(x in name_lower for x in ["filtro", "filtrante"]):
                     item["nome"] = "5W30"
                     item["pn"] = "7094487"
-                    item["preco_unitario"] = 91.54
+                    item["preco_unitario"] = 110.26
                     for r_name in list(item["trocas"].keys()):
                         try:
                             val = float(item["trocas"][r_name])
@@ -351,7 +369,7 @@ for sheet_name in sheet_names[1:]:
                         try:
                             val = float(item["custos"][r_name])
                             if val > 0:
-                                item["custos"][r_name] = round(6.0 * 91.54, 2)
+                                item["custos"][r_name] = round(6.0 * 110.26, 2)
                         except:
                             pass
         elif "TITANO" in nome_modelo.upper() or nome_modelo in ["TORO 2.2TD MY26", "TORO 2.2TD MY27", "TORO 2.0"]:
@@ -424,7 +442,11 @@ for nome_modelo, modelo_info in data["modelos"].items():
     modelo_alterado = False
     
     for item in modelo_info["itens"]:
-        if item["tipo"] == "peça" and (item["preco_unitario"] is None or item["preco_unitario"] <= 0):
+        if item["tipo"] == "peça" and (
+            item["preco_unitario"] is None or 
+            isinstance(item["preco_unitario"], str) or 
+            item["preco_unitario"] <= 0
+        ):
             pn = item["pn"]
             if pn in tabela_precos_por_pn:
                 item["preco_unitario"] = tabela_precos_por_pn[pn]

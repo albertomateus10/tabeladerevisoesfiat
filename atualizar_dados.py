@@ -151,6 +151,14 @@ for sheet_name in sheet_names_marco[1:]:
         if not nome_modelo:
             nome_modelo = sheet_name
             
+        # Tratar caso de colisão do ARGO 1.3
+        if nome_modelo == "ARGO 1.3":
+            if idx_block == 0:
+                nome_modelo = "ARGO 1.3 MT"
+            elif idx_block == 1:
+                print(f"  -> Bloco {idx_block + 1}: 'ARGO 1.3 GSR' [IGNORADO (GSR descontinuado)]")
+                continue
+            
         if nome_modelo == "FIORINO 1.4 (21/21)":
             print(f"  -> Bloco {idx_block + 1}: '{nome_modelo}' [IGNORADO]")
             continue
@@ -402,7 +410,13 @@ for sheet_name in sheet_names_marco[1:]:
         # Cruzar e atualizar precos_nacionais para este modelo específico
         matched_key = None
         for pk in precos_nacionais.keys():
-            if pk.lower().strip() == nome_modelo.lower().strip():
+            pk_clean = pk.lower().strip()
+            nm_clean = nome_modelo.lower().strip()
+            if pk_clean == nm_clean:
+                matched_key = pk
+                break
+            # Caso especial para ARGO 1.3 MT mapear para ARGO 1.3
+            if nm_clean == "argo 1.3 mt" and pk_clean == "argo 1.3":
                 matched_key = pk
                 break
                 
@@ -475,7 +489,13 @@ for nome_modelo, modelo_info in data["modelos"].items():
         # Atualizar a tabela de preços nacionais para este modelo específico para manter consistência
         matched_key = None
         for pk in data["precos_nacionais"].keys():
-            if pk.lower().strip() == nome_modelo.lower().strip():
+            pk_clean = pk.lower().strip()
+            nm_clean = nome_modelo.lower().strip()
+            if pk_clean == nm_clean:
+                matched_key = pk
+                break
+            # Caso especial para ARGO 1.3 MT mapear para ARGO 1.3
+            if nm_clean == "argo 1.3 mt" and pk_clean == "argo 1.3":
                 matched_key = pk
                 break
                 

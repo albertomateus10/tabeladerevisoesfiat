@@ -1,4 +1,4 @@
-e// Obter os dados do escopo global expostos por fiat_data.js
+// Obter os dados do escopo global expostos por fiat_data.js
 const fiatData = window.fiatData;
 
 // Elementos DOM principais

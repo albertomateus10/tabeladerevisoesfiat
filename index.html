@@ -1,444 +1,398 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description"
-        content="Acompanhe suas revisões e ganhe descontos progressivos com o Plano de Fidelidade San Marino Nota 10. Cada revisão te leva mais longe!">
-    <meta name="keywords"
-        content="Plano de Fidelidade - San Marino">
-    <title>Plano de Fidelidade San Marino</title>
-
-    <!-- Font Awesome para ícones premium -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Folha de estilos personalizada -->
+    <title>Revisões e Troca de Óleo</title>
+    <!-- CSS Customizado -->
     <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons para ícones modernos -->
+    <script src="lucide.min.js"></script>
+    <!-- Chart.js para gráficos elegantes -->
+    <script src="chart.umd.js"></script>
 </head>
-
 <body>
+    <div class="app-container">
 
-    <!-- ===== TELA DE ENTRADA / LOGIN ===== -->
-    <div id="landing-screen" class="landing-screen">
-        <!-- Lado Esquerdo (Arte) -->
-        <div class="landing-art-panel">
-            <!-- Imagem de fundo -->
-            <img src="nota10.png" alt="Plano de Fidelidade San Marino Nota 10" class="landing-bg-img">
-            <!-- Overlay suave para contrastar a imagem -->
-            <div class="landing-overlay"></div>
-        </div>
-
-        <!-- Lado Direito (Login / Cadastro) -->
-        <div class="landing-login-panel">
-            <!-- Card de Autenticação -->
-            <div class="landing-login-card">
-                <!-- Abas de Alternância -->
-                <div class="auth-tabs">
-                    <button id="tab-login" class="auth-tab active">Entrar</button>
-                    <button id="tab-register" class="auth-tab">Cadastrar</button>
-                </div>
-
-                <form id="landing-form" class="landing-form" novalidate>
-                    <div class="landing-input-group">
-                        <input
-                            type="email"
-                            id="landing-email-input"
-                            class="landing-input"
-                            placeholder="E-mail"
-                            required
-                            autocomplete="email"
-                        >
-                    </div>
-                    <div class="landing-input-group">
-                        <input
-                            type="password"
-                            id="landing-password-input"
-                            class="landing-input"
-                            placeholder="Senha"
-                            required
-                            autocomplete="current-password"
-                        >
-                    </div>
-                    <div class="landing-input-group" id="confirm-password-group" style="display: none;">
-                        <input
-                            type="password"
-                            id="landing-confirm-password-input"
-                            class="landing-input"
-                            placeholder="Confirmar Senha"
-                            autocomplete="new-password"
-                        >
-                    </div>
-                    <button type="submit" class="landing-btn" id="landing-btn">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <span id="btn-text">Acessar</span>
-                    </button>
-                </form>
-
-                <!-- Divisor OU -->
-                <div class="auth-divider">
-                    <span>ou</span>
-                </div>
-
-                <!-- Botão do Google -->
-                <button class="google-btn" id="google-login-btn">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    <span>Entrar com Google</span>
-                </button>
+        <!-- Header Superior com Abas de Navegação -->
+        <header>
+            <div class="brand-section">
+                <a href="https://github.com/albertomateus10/tabeladerevisoesfiat/raw/refs/heads/main/Tabela%20Revis%C3%A3o%20Programada%20FIAT%20Junho%202026.xlsx" target="_blank" rel="noopener noreferrer" class="brand-logo-link">
+                    <img src="logo.png" alt="San Marino" class="brand-logo-img">
+                </a>
+                <span class="brand-developed">Desenvolvido por <strong>Alberto Mateus</strong></span>
             </div>
-        </div>
-    </div>
+            <div class="header-controls">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-tab="tab-revisoes">
+                        <i data-lucide="wrench"></i>
+                        Revisões
+                    </button>
 
-    <!-- ===== APP PRINCIPAL ===== -->
-    <div id="main-app" class="main-app-hidden">
-
-        <!-- Conteúdo Principal -->
-        <main style="padding-top: 40px;">
-            <!-- Painel Lateral: Busca, Informações e Cadastro -->
-            <section class="panel-side">
-
-                <!-- Botão de Acesso do Gestor -->
-                <button id="btn-manager-dashboard" class="btn-premium btn-manager-dashboard" style="margin-bottom: 5px; background: linear-gradient(135deg, #00b894, #00d2d3); box-shadow: 0 4px 12px rgba(0, 184, 148, 0.25);">
-                    <i class="fas fa-chart-line"></i>
-                    Painel de Dados
-                </button>
-
-                <!-- Menu do Usuário Logado -->
-                <div class="user-menu" id="user-menu">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-user-circle" style="font-size: 1.1rem; color: var(--brand-red);"></i>
-                        <span class="user-email" id="user-email-display">-</span>
-                    </div>
-                    <button class="btn-logout" id="btn-logout" title="Sair">
-                        <i class="fas fa-door-open" style="font-size: 1.1rem;"></i>
+                    <button class="nav-tab" data-tab="tab-troca-oleo">
+                        <i data-lucide="droplet"></i>
+                        Troca de Óleo
                     </button>
                 </div>
+                <div class="date-counter-container">
+                    <div id="current-date-display" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; font-family: 'Outfit', sans-serif;">
+                        <!-- Injetado via JS -->
+                    </div>
+                </div>
+            </div>
+        </header>
 
-                <!-- Busca do Veículo -->
-                <div class="card-premium">
-                    <h3 class="card-title">
-                        <i class="fas fa-search"></i>
-                        Buscar Veículo
-                    </h3>
-                    <form id="search-form">
-                        <div class="form-group" style="position: relative;">
-                            <label for="search-input">Placa ou chassi</label>
-                            <input type="text" id="search-input" class="form-input" required autocomplete="off">
-                            <!-- Dropdown de Sugestões (Autocomplete) -->
-                            <div id="search-suggestions" class="autocomplete-dropdown"></div>
-                        </div>
-                        <button type="submit" class="btn-premium">
-                            <i class="fas fa-search"></i>
-                            Buscar
-                        </button>
-                    </form>
+        <!-- Loader Principal (exibido enquanto o JSON carrega) -->
+        <div id="main-loader" class="loader-container">
+            <div class="loader"></div>
+            <h2 style="color: var(--text-primary); font-family: 'Outfit', sans-serif; font-weight: 700; margin-top: 0.5rem; font-size: 1.25rem;">Pós-Venda Fiat</h2>
+            <p style="color: var(--text-secondary); font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 0.95rem; margin-top: -0.25rem;">Carregando dados das revisões Fiat...</p>
+        </div>
 
-                    <!-- Detalhes do Veículo Encontrado (oculto por padrão) -->
-                    <div id="vehicle-details" class="vehicle-info-display" style="display: none;">
-                        <h4 class="card-title" style="font-size: 1.1rem; margin-bottom: 12px; margin-top: 10px;">
-                            <i class="fas fa-info-circle" style="color: var(--brand-red);"></i> Dados do Veículo
-                        </h4>
-                        <div class="info-row">
-                            <span class="info-label">Placa:</span>
-                            <span class="info-value" id="info-placa">-</span>
+        <!-- Conteúdo Principal (inicialmente oculto até carregar o JSON) -->
+        <main id="main-content" class="hidden">
+            
+            <!-- ABA REVISÕES PROGRAMADAS -->
+            <section id="tab-revisoes" class="tab-content fade-in">
+                <div class="dashboard-layout">
+                    <!-- Sidebar de Modelos Raiz -->
+                    <aside class="sidebar sidebar-root">
+                        <div class="search-container" style="margin-bottom: 0.75rem;">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="rev-model-search" class="search-input" placeholder="Buscar modelo">
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">Chassi:</span>
-                            <span class="info-value" id="info-chassi">-</span>
+                        <div class="model-list" id="rev-root-list-container">
+                            <!-- Os botões dos modelos raiz serão injetados via JS -->
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">Concessionária:</span>
-                            <span class="info-value" id="info-concessionaria">-</span>
+                    </aside>
+
+                    <!-- Sidebar de Seleção de Carros -->
+                    <aside class="sidebar">
+                        <h3 class="model-list-title" id="rev-sub-list-title">Versões</h3>
+                        <div class="model-list" id="rev-vehicle-list-container">
+                            <!-- Os botões dos veículos serão injetados via JS -->
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">Consultor:</span>
-                            <span class="info-value" id="info-consultor">-</span>
+                    </aside>
+
+                    <!-- Área de Visualização do Veículo Selecionado -->
+                    <div class="content-area">
+                        <!-- Tela de Boas-Vindas (Capa) -->
+                        <div id="rev-welcome-cover" class="welcome-cover">
+                            <i data-lucide="wrench" style="width: 48px; height: 48px; margin-bottom: 1rem; color: var(--accent-red);"></i>
+                            <h2>Tabela de Revisão Programada</h2>
+                            <p>Selecione um modelo e uma versão nas colunas à esquerda para visualizar os planos de revisão programada, custos e peças.</p>
                         </div>
-    
-                        <div class="info-row">
-                            <span class="info-label">Cadastrado em:</span>
-                            <span class="info-value" id="info-data">-</span>
+
+                        <!-- Bloco de Conteúdo da Revisão Selecionada (Inicialmente Oculto) -->
+                        <div id="rev-data-container" style="display: none;">
+                            <!-- Card Principal com Título e Preço -->
+                            <div class="premium-card">
+                                <div class="car-header">
+                                    <div class="car-title-group">
+                                        <h2 id="rev-car-name">SELECIONE UM MODELO</h2>
+                                    </div>
+                                    <div class="price-boxes-container">
+                                        <!-- Box PREMIUM (Vermelho) -->
+                                        <div class="price-display-box package-box premium-box" id="box-premium" onclick="selectPackage('premium')">
+                                            <span class="price-label">Premium</span>
+                                            <span class="price-value" id="price-premium">R$ 0,00</span>
+                                        </div>
+
+                                        <!-- Box INTERMEDIÁRIO (Verde) -->
+                                        <div class="price-display-box package-box intermediario-box" id="box-intermediario" onclick="selectPackage('intermediario')">
+                                            <span class="price-label">Intermediário</span>
+                                            <span class="price-value" id="price-intermediario">R$ 0,00</span>
+                                        </div>
+
+                                        <!-- Box BÁSICO (Cinza) -->
+                                        <div class="price-display-box package-box basico-box" id="box-basico" onclick="selectPackage('basico')">
+                                            <span class="price-label">Básico</span>
+                                            <span class="price-value" id="price-basico">R$ 0,00</span>
+                                        </div>
+
+                                        <!-- Box FÁBRICA (Ativo por Padrão) -->
+                                        <div class="price-display-box package-box fabrica-box active-package" id="box-fabrica" onclick="selectPackage('fabrica')">
+                                            <span class="price-label">Fábrica</span>
+                                            <span class="price-value" id="rev-total-price">R$ 0,00</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Seletor de Quilometragens/Revisões -->
+                                <div class="km-selector-wrapper">
+                                    <div class="km-grid" id="rev-km-grid">
+                                        <!-- Botões de KM injetados via JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Detalhamento de Peças e Custos -->
+                            <div class="details-grid">
+                                <!-- Tabela de Peças e Componentes -->
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <h3 class="section-title">
+                                            <i data-lucide="package"></i> Componentes Substituídos
+                                        </h3>
+                                        <span class="section-count-badge" id="rev-parts-count">0 itens</span>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Componente</th>
+                                                    <th>Código</th>
+                                                    <th class="text-right">Unitário</th>
+                                                    <th class="text-right">QTD</th>
+                                                    <th class="text-right">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="rev-parts-table-body">
+                                                <!-- Inserido via JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Tabela de Mão de Obra e Consolidação -->
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <h3 class="section-title">
+                                            <i data-lucide="wrench"></i> Mão de Obra e Resumo
+                                        </h3>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                                        <div class="table-responsive" style="margin-bottom: 1rem;">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Serviço</th>
+                                                        <th class="text-right">Horas</th>
+                                                        <th class="text-right">Preço/h</th>
+                                                        <th class="text-right">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="item-name-cell" data-label="Serviço">Mão de Obra de Revisão</td>
+                                                        <td class="text-right td-highlight" id="rev-mo-hours" data-label="Horas">0.0h</td>
+                                                        <td class="text-right" id="rev-mo-rate" data-label="Preço/h">R$ 0,00</td>
+                                                        <td class="text-right td-highlight" id="rev-mo-subtotal" data-label="Subtotal">R$ 0,00</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <h4 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--card-border); padding-top: 1.25rem;">Valores Consolidados</h4>
+                                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                                            <div class="revisao-summary-row">
+                                                <span>Total em Peças:</span>
+                                                <span id="rev-sum-parts-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Total em Mão de Obra:</span>
+                                                <span id="rev-sum-mo-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row" id="rev-sum-package-row" style="display: none;">
+                                                <span id="rev-sum-package-label">Pacote Especial:</span>
+                                                <span id="rev-sum-package-cost" class="td-highlight">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Preço Total Estimado:</span>
+                                                <span class="td-total-highlight" id="rev-sum-total-cost" style="color: var(--text-primary);">R$ 0,00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Botão Gerar Voucher -->
-                <button id="btn-gerar-voucher" class="btn-voucher-float" title="Gerar Voucher">
-                    <i class="fas fa-ticket-alt"></i>
-                    <span>Gerar Voucher</span>
-                </button>
-
-                <!-- Cadastro de Veículo (Apenas visível/relevante para o Admin, mas disponível para inclusão) -->
-                <div class="card-premium">
-                    <h3 class="card-title">
-                        <i class="fas fa-plus-circle"></i>
-                        Cadastrar Veículo
-                    </h3>
-                    <form id="register-form">
-                        <div class="form-group">
-                            <label for="reg-placa">Placa</label>
-                            <input type="text" id="reg-placa" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-chassi">Chassi</label>
-                            <input type="text" id="reg-chassi" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-concessionaria">Concessionária vendedora</label>
-                            <input type="text" id="reg-concessionaria" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-consultor">Consultor</label>
-                            <input type="text" id="reg-consultor" class="form-input" required>
-                        </div>
-    
-                        <button type="submit" class="btn-premium btn-secondary">
-                            <i class="fas fa-save"></i>
-                            Cadastrar Veículo
-                        </button>
-                    </form>
-                </div>
-
             </section>
 
-            <!-- Painel de Controle de Revisões (Circuito de Estrada Premium) -->
-            <section class="map-container">
-                <!-- O Tabuleiro de Fidelidade Baseado na imagem nota10.png -->
-                <div class="fidelity-board" id="main-fidelity-board">
-                    <img src="nota10.png" alt="Tabuleiro de Fidelidade" class="board-bg-img" draggable="false">
-                    <!-- Checks são inseridos dinamicamente pelo JS ao clicar -->
+
+            <!-- ABA TABELA GERAL -->
+            <section id="tab-tabela-geral" class="tab-content fade-in hidden">
+                <div class="tabela-geral-layout">
+                    <div class="tabela-geral-card">
+                        <div class="tabela-geral-controls">
+                            <div>
+                                <h2>Tabela Geral de Valores de Revisão</h2>
+                                <p style="color: var(--text-secondary);">Custos das revisões programadas de todos os modelos Fiat (valores em Reais)</p>
+                            </div>
+                            <div class="tabela-geral-search">
+                                <div class="search-container" style="margin-bottom: 0;">
+                                    <i data-lucide="search" class="search-icon"></i>
+                                    <input type="text" id="tabela-geral-search-input" class="search-input" placeholder="Buscar modelo na tabela geral...">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive tabela-geral-wrapper" style="margin-top: 1.5rem;">
+                            <table id="table-geral-dados">
+                                <thead>
+                                    <tr>
+                                        <th>Modelo</th>
+                                        <th class="text-right">1ª Rev (10k)</th>
+                                        <th class="text-right">2ª Rev (20k)</th>
+                                        <th class="text-right">3ª Rev (30k)</th>
+                                        <th class="text-right">4ª Rev (40k)</th>
+                                        <th class="text-right">5ª Rev (50k)</th>
+                                        <th class="text-right">6ª Rev (60k)</th>
+                                        <th class="text-right">7ª Rev (70k)</th>
+                                        <th class="text-right">8ª Rev (80k)</th>
+                                        <th class="text-right">9ª Rev (90k)</th>
+                                        <th class="text-right">10ª Rev (100k)</th>
+                                        <th class="text-right" style="color: var(--accent-red); font-weight: 700;">Total (100k km)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-geral-body">
+                                    <!-- Injetado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </section>
+            
+            <!-- ABA TROCA DE ÓLEO (MANTIDA IDÊNTICA) -->
+            <section id="tab-troca-oleo" class="tab-content fade-in hidden">
+                <div class="dashboard-layout">
+                    <!-- Sidebar de Modelos Raiz -->
+                    <aside class="sidebar sidebar-root">
+                        <div class="search-container" style="margin-bottom: 0.75rem;">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="oil-model-search" class="search-input" placeholder="Buscar modelo">
+                        </div>
+                        <div class="model-list" id="oil-root-list-container">
+                            <!-- Os botões dos modelos raiz (ex: TORO, CRONOS) serão injetados via JS -->
+                        </div>
+                    </aside>
+
+                    <!-- Sidebar de Seleção de Carros -->
+                    <aside class="sidebar">
+                        <h3 class="model-list-title" id="oil-sub-list-title">Versões</h3>
+                        <div class="model-list" id="oil-vehicle-list-container">
+                            <!-- Os botões dos veículos serão injetados dinamicamente via JS -->
+                        </div>
+                    </aside>
+
+                    <!-- Área de Visualização do Veículo Selecionado -->
+                    <div class="content-area">
+                        <!-- Tela de Boas-Vindas (Capa) -->
+                        <div id="oil-welcome-cover" class="welcome-cover">
+                            <h2>Valores de Troca de Óleo</h2>
+                            <p>Selecione uma versão na coluna central para visualizar os valores de óleo e filtro, quantidade de óleo e tempo de mão de obra.</p>
+                        </div>
+
+                        <!-- Bloco para Veículos a Combustão (Inicialmente Oculto) -->
+                        <div id="oil-combustion-container" style="display: none;">
+                            <!-- Card com Informações Principais e Preço -->
+                            <div class="premium-card">
+                                <div class="car-header">
+                                    <div class="car-title-group">
+                                        <h2 id="oil-car-name">SELECIONE UM MODELO</h2>
+                                    </div>
+                                    <div class="price-display-box" style="background: linear-gradient(135deg, rgba(255, 56, 56, 0.15) 0%, rgba(255, 56, 56, 0.05) 100%); border-color: rgba(255, 56, 56, 0.3);">
+                                        <span class="price-label" style="color: var(--accent-red); font-weight: 600;">Total da Troca de Óleo</span>
+                                        <span class="price-value" id="oil-total-price">R$ 0,00</span>
+                                        <span class="price-notes">Peças + Mão de obra inclusas</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detalhamento de Peças e Custos -->
+                            <div class="details-grid">
+                                <!-- Tabela de Componentes -->
+                                <div class="section-card">
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Componente</th>
+                                                    <th>Código</th>
+                                                    <th class="text-right">Unitário</th>
+                                                    <th class="text-right">QTD</th>
+                                                    <th class="text-right">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="oil-parts-table-body">
+                                                <!-- Inserido dinamicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Resumo Financeiro da Troca de Óleo -->
+                                <div class="section-card">
+                                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                                        <h4 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Mão de Obra de Troca</h4>
+                                        <div class="table-responsive" style="margin-bottom: 1rem;">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Serviço</th>
+                                                        <th class="text-right">Horas</th>
+                                                        <th class="text-right">Preço/h</th>
+                                                        <th class="text-right">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="item-name-cell" data-label="Serviço">Mão de Obra Troca de Óleo</td>
+                                                        <td class="text-right td-highlight" id="oil-mo-hours" data-label="Horas">0.0h</td>
+                                                        <td class="text-right" id="oil-mo-rate" data-label="Preço/h">R$ 0,00</td>
+                                                        <td class="text-right td-highlight" id="oil-mo-subtotal" data-label="Subtotal">R$ 0,00</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <h4 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--card-border); padding-top: 1.25rem;">Valores Consolidados</h4>
+                                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                                            <div class="revisao-summary-row">
+                                                <span>Lubrificante & Filtro:</span>
+                                                <span id="oil-sum-parts-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Mão de Obra do Serviço:</span>
+                                                <span id="oil-sum-mo-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Preço Total Estimado:</span>
+                                                <span class="td-total-highlight" id="oil-sum-total-cost" style="color: var(--text-primary);">R$ 0,00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bloco para Veículo Elétrico (Fiat 500e - Inicialmente Oculto) -->
+                        <div id="oil-electric-alert" class="premium-card electric-alert" style="display: none;">
+                            <i data-lucide="zap" style="width: 48px; height: 48px; color: var(--info-color); margin-bottom: 1.5rem; stroke-width: 1.5; display: inline-block;"></i>
+                            <h3 style="font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--text-primary);">Veículo 100% Elétrico</h3>
+                            <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6; font-size: 1.05rem;">
+                                O <strong>Fiat 500e</strong> utiliza propulsão 100% elétrica. Por não possuir motor a combustão interna, ele <strong>não necessita de óleo lubrificante de motor</strong> nem filtro de óleo, resultando em um custo de <strong>R$ 0,00</strong> para este serviço.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
-        <!-- MODAL: Configuração do Firebase -->
-        <div class="modal-overlay" id="config-modal">
-            <div class="modal-content" style="max-width: 550px; max-height: 90vh; overflow-y: auto;">
-                <button class="modal-close" id="close-config">&times;</button>
-                <h3 class="modal-title"><i class="fas fa-cog" style="color: var(--brand-green);"></i> Configurar Banco
-                    Firebase</h3>
-                <p class="modal-desc">
-                    Insira as credenciais do seu projeto Firebase (Web App Config) para ativar o Firestore em tempo
-                    real.
-                </p>
-                <form id="config-form">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="cfg-api-key" style="font-size: 0.8rem;">API Key</label>
-                            <input type="text" id="cfg-api-key" class="form-input" style="padding-left: 15px;"
-                                placeholder="apiKey" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="cfg-auth-domain" style="font-size: 0.8rem;">Auth Domain</label>
-                            <input type="text" id="cfg-auth-domain" class="form-input" style="padding-left: 15px;"
-                                placeholder="authDomain" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="cfg-project-id" style="font-size: 0.8rem;">Project ID</label>
-                            <input type="text" id="cfg-project-id" class="form-input" style="padding-left: 15px;"
-                                placeholder="projectId" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="cfg-storage-bucket" style="font-size: 0.8rem;">Storage Bucket</label>
-                            <input type="text" id="cfg-storage-bucket" class="form-input" style="padding-left: 15px;"
-                                placeholder="storageBucket" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="cfg-messaging-sender-id" style="font-size: 0.8rem;">Sender ID</label>
-                            <input type="text" id="cfg-messaging-sender-id" class="form-input"
-                                style="padding-left: 15px;" placeholder="messagingSenderId" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="cfg-app-id" style="font-size: 0.8rem;">App ID</label>
-                            <input type="text" id="cfg-app-id" class="form-input" style="padding-left: 15px;"
-                                placeholder="appId" required>
-                        </div>
-                    </div>
-                    <div class="form-group" style="margin-top: 10px; margin-bottom: 25px;">
-                        <label for="cfg-pin" style="font-size: 0.8rem;">PIN do Administrador (Para Alterar
-                            Revisões)</label>
-                        <input type="password" id="cfg-pin" class="form-input" style="padding-left: 15px;"
-                            placeholder="Padrão: 1234" maxlength="8">
-                    </div>
-                    <button type="submit" class="btn-premium">
-                        <i class="fas fa-plug"></i> Conectar e Salvar
-                    </button>
-                </form>
-            </div>
-        </div>
 
-        <!-- MODAL: Visualização e Geração do Voucher -->
-        <div class="modal-overlay voucher-modal" id="voucher-modal">
-            <div class="modal-content voucher-modal-content">
-                <button class="modal-close" id="close-voucher">&times;</button>
-                
-                <div id="voucher-print-area" class="voucher-print-area">
-                    <!-- Página 1: Dados do Veículo e Recomendação -->
-                    <div class="voucher-pdf-page">
-                        <!-- Cabeçalho com dados do veículo -->
-                        <div class="voucher-vehicle-header">
-                            <h2>Plano de Fidelidade San Marino</h2>
-                            <div class="voucher-vehicle-grid">
-                                <div><strong>Placa:</strong> <span id="voucher-placa">-</span></div>
-                                <div><strong>Chassi:</strong> <span id="voucher-chassi">-</span></div>
-                                <div><strong>Consultor:</strong> <span id="voucher-consultor">-</span></div>
-                                <div><strong>Data de Emissão:</strong> <span id="voucher-data">-</span></div>
-                            </div>
-                        </div>
 
-                        <!-- Card de Recomendação (Página 1 do PDF) -->
-                        <div class="voucher-recommendation-card">
-                            <img src="recomendacao.jpeg" alt="Recomendação San Marino Nota 10" class="voucher-rec-img">
-                        </div>
-                    </div>
-
-                    <!-- Página 2: Tabuleiro de Fidelidade -->
-                    <div class="voucher-pdf-page">
-                        <div class="voucher-board-wrapper">
-                            <div class="fidelity-board voucher-fidelity-board" id="voucher-fidelity-board">
-                                <img src="nota10.png" alt="Tabuleiro de Fidelidade" class="board-bg-img" draggable="false">
-                                <!-- Checks sincronizados dinamicamente pelo JS -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="voucher-modal-actions">
-                    <button id="btn-print-voucher" class="btn-premium">
-                        <i class="fas fa-download"></i> Gerar PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL: Dashboard de Acesso do Gestor -->
-        <div class="modal-overlay" id="manager-dashboard-modal">
-            <div class="modal-content manager-modal-content">
-                <button class="modal-close" id="close-manager-dashboard">&times;</button>
-                
-                <div class="dashboard-header-wrapper" style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; padding-right: 30px;">
-                    <div style="display: flex; flex-direction: column;">
-                        <h3 class="modal-title" style="margin-bottom: 5px;">
-                            <i class="fas fa-chart-line" style="color: var(--brand-green);"></i> 
-                            Painel de dados
-                        </h3>
-                        <p class="modal-desc" style="margin-bottom: 0;">
-                            Consulte as estatísticas e informações detalhadas de todos os veículos cadastrados no sistema.
-                        </p>
-                    </div>
-                    <button id="btn-export-excel" class="btn-premium" style="width: auto; padding: 10px 20px; font-size: 0.85rem; background: linear-gradient(135deg, #107c41, #1f9a55); box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25); height: fit-content; text-transform: none; font-family: 'Montserrat', sans-serif; font-weight: 700;">
-                        <i class="fas fa-file-excel"></i> Exportar Excel
-                    </button>
-                </div>
-
-                <!-- Cards de Estatísticas / KPIs -->
-                <div class="dashboard-kpis">
-                    <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, rgba(0, 184, 148, 0.15), rgba(0, 184, 148, 0.05)); color: #00b894;"><i class="fas fa-car"></i></div>
-                        <div class="kpi-data">
-                            <span class="kpi-value" id="kpi-total-vehicles">0</span>
-                            <span class="kpi-label">Veículos Cadastrados</span>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, rgba(9, 132, 227, 0.15), rgba(9, 132, 227, 0.05)); color: #0984e3;"><i class="fas fa-check-double"></i></div>
-                        <div class="kpi-data">
-                            <span class="kpi-value" id="kpi-total-revisions">0</span>
-                            <span class="kpi-label">Total de Revisões</span>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, rgba(232, 67, 147, 0.15), rgba(232, 67, 147, 0.05)); color: #e84393;"><i class="fas fa-store"></i></div>
-                        <div class="kpi-data">
-                            <span class="kpi-value" id="kpi-top-concessionaria">-</span>
-                            <span class="kpi-label">Concessionária Líder</span>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(241, 196, 15, 0.05)); color: #f1c40f;"><i class="fas fa-user-tie"></i></div>
-                        <div class="kpi-data">
-                            <span class="kpi-value" id="kpi-top-consultor">-</span>
-                            <span class="kpi-label">Consultor Líder</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Barra de Filtros e Busca -->
-                <div class="dashboard-filters">
-                    <div class="filter-group">
-                        <label for="filter-placa">Filtrar por Placa</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="filter-placa" class="form-input filter-input" placeholder="Ex: ABC1D23" autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-chassi">Filtrar por Chassi</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-fingerprint"></i>
-                            <input type="text" id="filter-chassi" class="form-input filter-input" placeholder="Ex: 9BD..." autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-concessionaria">Filtrar por Concessionária</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-store"></i>
-                            <input type="text" id="filter-concessionaria" class="form-input filter-input" placeholder="Ex: San Marino" autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-consultor">Filtrar por Consultor</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-user-tie"></i>
-                            <input type="text" id="filter-consultor" class="form-input filter-input" placeholder="Ex: João Silva" autocomplete="off">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tabela de Resultados -->
-                <div class="dashboard-table-wrapper">
-                    <table class="dashboard-table" id="manager-table">
-                        <thead>
-                            <tr>
-                                <th>Placa</th>
-                                <th>Chassi</th>
-                                <th>Concessionária Vendedora</th>
-                                <th>Consultor</th>
-                                <th style="text-align: center;">Revisões Realizadas</th>
-                                <th style="text-align: center;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="manager-table-body">
-                            <!-- Inserido dinamicamente pelo JS -->
-                        </tbody>
-                    </table>
-                    <div class="dashboard-table-empty" id="manager-table-empty">
-                        <i class="fas fa-folder-open"></i>
-                        <span>Nenhum veículo encontrado com os filtros aplicados.</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div><!-- /#main-app -->
-
-    <!-- Toast de Notificações -->
-    <div class="toast" id="toast">
-        <i id="toast-icon" class="fas fa-check-circle"></i>
-        <span id="toast-message">Notificação de teste!</span>
     </div>
 
-    <!-- SDKs do Firebase (Versão Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <!-- html2pdf.js para exportar PDF de alta definição -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    </div>
 
-    <!-- Configuração e Arquivos de Código -->
-    <script src="config.js"></script>
+    <!-- Script JavaScript com os Dados -->
+    <script src="fiat_data.js"></script>
+    <!-- Script JavaScript Principal -->
     <script src="app.js"></script>
 </body>
-
 </html>

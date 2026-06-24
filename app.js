@@ -1,1293 +1,889 @@
-// LÓGICA PRINCIPAL DO APLICATIVO (FIREBASE VERSION)
+// Obter os dados do escopo global expostos por fiat_data.js
+const fiatData = window.fiatData;
 
-// Estado da Aplicação
-let db = null; // Banco de dados do Firestore
-let currentVehicle = null;
-let isAdmin = true;
-let managerVehiclesList = []; // Cache local de veículos para o dashboard do gestor
-let currentFilteredVehiclesList = []; // Lista filtrada de veículos em exibição no dashboard
+// Elementos DOM principais
+const mainLoader = document.getElementById('main-loader');
+const mainContent = document.getElementById('main-content');
 
-// Configurações ativas
-let activeConfig = {
-    firebaseConfig: {
-        apiKey: "",
-        authDomain: "",
-        projectId: "",
-        storageBucket: "",
-        messagingSenderId: "",
-        appId: ""
-    },
-    adminPin: "1234"
+// Variáveis Globais de Controle das Abas
+let currentOilCar = null;
+let selectedRootModel = null;
+
+let currentRevCar = null;
+let selectedRevRootModel = null;
+let selectedRevIndex = 0;
+let selectedPackageName = 'fabrica';
+let adicionaisDesmarcados = {};
+
+// Itens e preços de acréscimo para os pacotes de serviço
+const serviçosAdicionais = {
+    basico: [
+        { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
+        { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
+        { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 }
+    ],
+    intermediario: [
+        { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
+        { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
+        { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 },
+        { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
+        { nome: "Lubrificação das Partes Móveis", pn: "FT7088810", preco: 104.37 },
+    ],
+    premium: [
+        { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
+        { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
+        { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 },
+        { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
+        { nome: "Lubrificação das Partes Móveis", pn: "FT7088810", preco: 104.37 },
+        { nome: "Oxisanitização", pn: "OXI", preco: 80.27 },
+        { nome: "Limpeza Técnica do Motor", pn: "OF20021", preco: 107.35 },
+        { nome: "Cristalizador de Para-brisa", pn: "OF20002", preco: 84.37 }
+    ]
 };
 
-// Elementos do DOM
-const elements = {
-    // Formulários e painéis
-    searchForm: document.getElementById('search-form'),
-    searchInput: document.getElementById('search-input'),
-    registerForm: document.getElementById('register-form'),
-    regPlaca: document.getElementById('reg-placa'),
-    regChassi: document.getElementById('reg-chassi'),
-    regConcessionaria: document.getElementById('reg-concessionaria'),
-    regConsultor: document.getElementById('reg-consultor'),
-    
-    // Autocomplete
-    searchSuggestions: document.getElementById('search-suggestions'),
+// Injeção da data atual formatada
+function initDate() {
+    const dateDisplay = document.getElementById('current-date-display');
+    if (!dateDisplay) return;
 
-    // Info do Veículo
-    vehicleDetails: document.getElementById('vehicle-details'),
-    infoPlaca: document.getElementById('info-placa'),
-    infoChassi: document.getElementById('info-chassi'),
-    infoConcessionaria: document.getElementById('info-concessionaria'),
-    infoConsultor: document.getElementById('info-consultor'),
-    infoData: document.getElementById('info-data'),
-    
-    // Modais
-    configModal: document.getElementById('config-modal'),
-    configForm: document.getElementById('config-form'),
-    cfgApiKey: document.getElementById('cfg-api-key'),
-    cfgAuthDomain: document.getElementById('cfg-auth-domain'),
-    cfgProjectId: document.getElementById('cfg-project-id'),
-    cfgStorageBucket: document.getElementById('cfg-storage-bucket'),
-    cfgMessagingSenderId: document.getElementById('cfg-messaging-sender-id'),
-    cfgAppId: document.getElementById('cfg-app-id'),
-    cfgPin: document.getElementById('cfg-pin'),
-    closeConfig: document.getElementById('close-config'),
-    
-    logoMain: document.querySelector('.logo-main'),
-    userMenu: document.getElementById('user-menu'),
-    
-    // Grid e Revisões
-    mainBoard: document.getElementById('main-fidelity-board'),
-    voucherBoard: document.getElementById('voucher-fidelity-board'),
-    
-    // Voucher
-    btnGerarVoucher: document.getElementById('btn-gerar-voucher'),
-    voucherModal: document.getElementById('voucher-modal'),
-    closeVoucher: document.getElementById('close-voucher'),
-    btnPrintVoucher: document.getElementById('btn-print-voucher'),
-    voucherPlaca: document.getElementById('voucher-placa'),
-    voucherChassi: document.getElementById('voucher-chassi'),
-    voucherConcessionaria: document.getElementById('voucher-concessionaria'),
-    voucherConsultor: document.getElementById('voucher-consultor'),
-    voucherData: document.getElementById('voucher-data'),
-    
-    // Dashboard do Gestor
-    btnManagerDashboard: document.getElementById('btn-manager-dashboard'),
-    managerModal: document.getElementById('manager-dashboard-modal'),
-    closeManagerDashboard: document.getElementById('close-manager-dashboard'),
-    managerTableBody: document.getElementById('manager-table-body'),
-    managerTableEmpty: document.getElementById('manager-table-empty'),
-    kpiTotalVehicles: document.getElementById('kpi-total-vehicles'),
-    kpiTotalRevisions: document.getElementById('kpi-total-revisions'),
-    kpiTopConcessionaria: document.getElementById('kpi-top-concessionaria'),
-    kpiTopConsultor: document.getElementById('kpi-top-consultor'),
-    filterPlaca: document.getElementById('filter-placa'),
-    filterChassi: document.getElementById('filter-chassi'),
-    filterConcessionaria: document.getElementById('filter-concessionaria'),
-    filterConsultor: document.getElementById('filter-consultor'),
-    btnExportExcel: document.getElementById('btn-export-excel'),
-    
-    // Toast de notificação
-    toast: document.getElementById('toast'),
-    toastMsg: document.getElementById('toast-message'),
-    toastIcon: document.getElementById('toast-icon')
-};
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const today = new Date();
+    let dateStr = today.toLocaleDateString('pt-BR', options);
+    // Capitalizar a primeira letra
+    dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+    dateDisplay.innerText = dateStr;
+}
 
-// Inicialização ao carregar a página
+
+// Inicialização da Aplicação
 document.addEventListener('DOMContentLoaded', () => {
-    loadConfiguration();
-    setupEventListeners();
-    initFirebase();
-    setupLandingScreen();
+    try {
+        // Inicializar ícones do Lucide (apenas se a lib estiver disponível)
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            console.warn('Lucide Icons não carregado. Ícones não serão renderizados.');
+        }
+
+        // Verificar se os dados do fiatData estão disponíveis
+        if (typeof fiatData !== 'undefined' && fiatData !== null) {
+            // Ocultar Loader e mostrar conteúdo principal
+            mainLoader.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+
+            // Inicializar componentes
+            initDate();
+            initTabs();
+            initRevisoes();
+            initTabelaGeral();
+            initTrocaOleo();
+
+            // Re-renderizar ícones
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        } else {
+            showError("O arquivo de base de dados (fiat_data.js) não foi encontrado na pasta ou está vazio.");
+        }
+    } catch (err) {
+        console.error("Erro na inicialização da aplicação:", err);
+        showError("Ocorreu um erro ao carregar a aplicação. Detalhes: " + err.message);
+    }
 });
 
-// 0. Controle da Tela de Entrada (Landing Screen)
-function setupLandingScreen() {
-    const landingForm = document.getElementById('landing-form');
-    const emailInput = document.getElementById('landing-email-input');
-    const passwordInput = document.getElementById('landing-password-input');
-    const confirmPasswordInput = document.getElementById('landing-confirm-password-input');
-    const confirmPasswordGroup = document.getElementById('confirm-password-group');
-    const googleLoginBtn = document.getElementById('google-login-btn');
-    const tabLogin = document.getElementById('tab-login');
-    const tabRegister = document.getElementById('tab-register');
-    const btnText = document.getElementById('btn-text');
-    const btnIcon = document.querySelector('#landing-btn i');
+// Exibir mensagem de erro amigável no lugar do loader
+function showError(msg) {
+    mainLoader.innerHTML = `
+        <div style="text-align: center; padding: 2rem; max-width: 500px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; box-shadow: 0 8px 32px var(--shadow-color);">
+            <div style="font-size: 3rem; color: var(--accent-red); margin-bottom: 1rem;">⚠️</div>
+            <p style="color: var(--text-primary); font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Erro de Inicialização</p>
+            <p style="color: var(--text-secondary); font-family: 'Inter', sans-serif; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem;">${msg}</p>
+            <button onclick="window.location.reload();" style="background: var(--accent-red); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-family: 'Outfit', sans-serif; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                Recarregar Página
+            </button>
+        </div>
+    `;
+}
 
-    let authMode = 'login';
+// FORMATADORES AUXILIARES
+function compareCarNames(a, b) {
+    const isTitanoA = a.toUpperCase().includes("TITANO");
+    const isTitanoB = b.toUpperCase().includes("TITANO");
 
-    // Alternar para Login
-    tabLogin.addEventListener('click', () => {
-        authMode = 'login';
-        tabLogin.classList.add('active');
-        tabRegister.classList.remove('active');
-        confirmPasswordGroup.style.display = 'none';
-        confirmPasswordInput.required = false;
-        btnText.textContent = "Acessar";
-        if (btnIcon) {
-            btnIcon.className = "fas fa-sign-in-alt";
+    if (isTitanoA && isTitanoB) {
+        const order = [
+            "TITANO 2.2D MT (Antiga/9VC)",
+            "TITANO 2.2D AT (Antiga/9VC)",
+            "TITANO 2.2D MT (Nova/8AP)",
+            "TITANO 2.2D AT (Nova/8AP)"
+        ];
+        const idxA = order.indexOf(a);
+        const idxB = order.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) {
+            return idxA - idxB;
+        }
+    }
+    return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+}
+
+function formatCurrency(val) {
+    if (val === null || val === undefined || isNaN(val)) return 'R$ 0,00';
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// DETERMINADORES DE NOMES E HEURÍSTICAS
+function getRootModel(name) {
+    const nameUpper = name.toUpperCase();
+    if (nameUpper.includes("STRADA")) return "STRADA";
+    if (nameUpper.includes("SIENA")) return "GRAND SIENA";
+    if (nameUpper.includes("PALIO")) return "PALIO";
+    if (nameUpper.includes("FASTBACK")) return "FASTBACK";
+    if (nameUpper.includes("DUCATO")) return "DUCATO";
+    if (nameUpper.includes("SCUDO")) return "SCUDO";
+    if (nameUpper.includes("DOBLO")) return "DOBLO";
+    if (nameUpper.includes("FIORINO")) return "FIORINO";
+    if (nameUpper.includes("CRONOS")) return "CRONOS";
+    if (nameUpper.includes("ARGO")) return "ARGO";
+    if (nameUpper.includes("MOBI")) return "MOBI";
+    if (nameUpper.includes("PULSE")) return "PULSE";
+    if (nameUpper.includes("TITANO")) return "TITANO";
+    if (nameUpper.includes("TORO")) return "TORO";
+    if (nameUpper.includes("UNO")) return "UNO";
+
+    return name.split(" ")[0].toUpperCase();
+}
+
+function parseVersionName(fullName) {
+    const root = getRootModel(fullName);
+    let rest = fullName;
+
+    if (fullName.toUpperCase().startsWith(root)) {
+        rest = fullName.substring(root.length).trim();
+    } else if (fullName.toUpperCase().startsWith("NOVA " + root)) {
+        rest = fullName.substring(("NOVA " + root).length).trim();
+    } else if (fullName.toUpperCase().startsWith("NOVO " + root)) {
+        rest = fullName.substring(("NOVO " + root).length).trim();
+    } else if (fullName.toUpperCase().startsWith("PALIO WEEKEND")) {
+        rest = fullName.substring("PALIO WEEKEND".length).trim();
+    } else if (fullName.toUpperCase().startsWith("GRAND SIENA")) {
+        rest = fullName.substring("GRAND SIENA".length).trim();
+    }
+
+    let title = rest;
+    let subtitle = "";
+
+    const myIndex = rest.toUpperCase().indexOf("MY");
+    const ateIndex = rest.toUpperCase().indexOf("ATÉ");
+    const parenIndex = rest.indexOf("(");
+
+    let splitIndex = -1;
+    if (myIndex !== -1) splitIndex = myIndex;
+    if (ateIndex !== -1 && (splitIndex === -1 || ateIndex < splitIndex)) splitIndex = ateIndex;
+    if (parenIndex !== -1 && (splitIndex === -1 || parenIndex < splitIndex)) splitIndex = parenIndex;
+
+    if (splitIndex !== -1) {
+        title = rest.substring(0, splitIndex).trim();
+        subtitle = rest.substring(splitIndex).trim();
+
+        if (subtitle.startsWith("(") && subtitle.endsWith(")")) {
+            subtitle = subtitle.substring(1, subtitle.length - 1).trim();
+        }
+    }
+
+    if (!title) {
+        title = fullName;
+    }
+
+    return { title, subtitle };
+}
+
+// ==========================================
+// 1. GERENCIADOR DE ABAS
+// ==========================================
+function initTabs() {
+    const tabs = document.querySelectorAll('.nav-tab');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.add('hidden'));
+
+            tab.classList.add('active');
+            const targetId = tab.getAttribute('data-tab');
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    });
+}
+
+// ==========================================
+// 2. REVISÕES PROGRAMADAS (ABA 1)
+// ==========================================
+function initRevisoes() {
+    const searchInput = document.getElementById('rev-model-search');
+    const rootListContainer = document.getElementById('rev-root-list-container');
+    const listContainer = document.getElementById('rev-vehicle-list-container');
+
+    const carNames = Object.keys(fiatData.modelos)
+        .filter(name => name.toLowerCase() !== '500e')
+        .sort(compareCarNames);
+
+    const rootGroups = {};
+    carNames.forEach((name) => {
+        const root = getRootModel(name);
+        if (!rootGroups[root]) {
+            rootGroups[root] = [];
+        }
+        rootGroups[root].push(name);
+    });
+
+    const rootModelsList = Object.keys(rootGroups).sort();
+
+    function renderRootList(filterText = '') {
+        rootListContainer.innerHTML = '';
+        const filteredRoots = rootModelsList.filter(root =>
+            root.toLowerCase().includes(filterText.toLowerCase())
+        );
+
+        filteredRoots.forEach((root) => {
+            const btn = document.createElement('button');
+            btn.className = 'root-model-btn';
+            if (selectedRevRootModel === root) {
+                btn.classList.add('active');
+            }
+            btn.innerHTML = `<span>${root}</span>`;
+
+            btn.addEventListener('click', () => {
+                rootListContainer.querySelectorAll('.root-model-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedRevRootModel = root;
+                renderVersionList();
+            });
+
+            rootListContainer.appendChild(btn);
+        });
+    }
+
+    function renderVersionList() {
+        listContainer.innerHTML = '';
+        if (!selectedRevRootModel) return;
+
+        const versions = rootGroups[selectedRevRootModel] || [];
+
+        versions.forEach((name) => {
+            const btn = document.createElement('button');
+            btn.className = 'model-item-btn rev-model-btn';
+            if (currentRevCar && currentRevCar.modelo === name) {
+                btn.classList.add('active');
+            }
+
+            const parsed = parseVersionName(name);
+            const subtitleHtml = parsed.subtitle ? `<span class="version-subtitle">${parsed.subtitle}</span>` : '';
+            btn.innerHTML = `
+                <div class="version-info">
+                    <span class="version-title">${parsed.title}</span>
+                    ${subtitleHtml}
+                </div>
+                <i data-lucide="chevron-right" class="chevron"></i>
+            `;
+
+            btn.addEventListener('click', () => {
+                listContainer.querySelectorAll('.rev-model-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectRevCar(name);
+            });
+            listContainer.appendChild(btn);
+        });
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    searchInput.addEventListener('input', (e) => {
+        renderRootList(e.target.value);
+    });
+
+    if (rootModelsList.length > 0) {
+        selectedRevRootModel = rootModelsList.includes("TORO") ? "TORO" : rootModelsList[0];
+        renderRootList();
+        renderVersionList();
+    }
+}
+
+function selectRevCar(carName) {
+    try {
+        currentRevCar = fiatData.modelos[carName];
+        selectedRevIndex = 0;
+        adicionaisDesmarcados = {};
+
+        document.getElementById('rev-car-name').innerText = currentRevCar.modelo;
+
+        const welcomeCover = document.getElementById('rev-welcome-cover');
+        const dataContainer = document.getElementById('rev-data-container');
+
+        if (welcomeCover) welcomeCover.style.display = 'none';
+        if (dataContainer) dataContainer.style.display = 'block';
+
+        renderRevKmGrid();
+        renderRevisionDetails(0);
+    } catch (err) {
+        console.error("Erro ao selecionar veículo para revisão:", err);
+        alert("Erro ao selecionar o veículo: " + err.message);
+    }
+}
+
+function renderRevKmGrid() {
+    const kmGrid = document.getElementById('rev-km-grid');
+    kmGrid.innerHTML = '';
+
+    currentRevCar.revisoes.forEach((revName, idx) => {
+        const kmLabel = currentRevCar.quilometragens[idx] || `${idx + 1}a`;
+
+        const btn = document.createElement('button');
+        btn.className = 'km-btn';
+        if (selectedRevIndex === idx) {
+            btn.classList.add('active');
+        }
+        btn.innerText = kmLabel;
+
+        btn.addEventListener('click', () => {
+            kmGrid.querySelectorAll('.km-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedRevIndex = idx;
+            renderRevisionDetails(idx);
+        });
+
+        kmGrid.appendChild(btn);
+    });
+}
+
+function selectPackage(packageName) {
+    selectedPackageName = packageName;
+    adicionaisDesmarcados = {};
+    if (currentRevCar) {
+        renderRevisionDetails(selectedRevIndex);
+    }
+}
+
+window.toggleServicoAdicional = function (nomeServico, event) {
+    if (event) event.stopPropagation();
+    adicionaisDesmarcados[nomeServico] = !adicionaisDesmarcados[nomeServico];
+    if (currentRevCar) {
+        renderRevisionDetails(selectedRevIndex);
+    }
+};
+
+function renderRevisionDetails(revIdx) {
+    const revName = currentRevCar.revisoes[revIdx];
+    const totalPrice = currentRevCar.custos_totais[revIdx] || 0;
+
+    // Calcular horas e subtotal de MO primeiro para usar no cálculo
+    let moHoras = 0;
+    let moPrecoHora = 349.0;
+    let moSubtotal = 0;
+
+    currentRevCar.itens.forEach(item => {
+        const qty = item.trocas[revName];
+        const custo = item.custos[revName];
+        if (item.tipo === 'serviço') {
+            if (qty !== undefined && qty > 0) {
+                moHoras = parseFloat(qty) || 0;
+                moPrecoHora = parseFloat(item.preco_unitario) || 349.0;
+                moSubtotal = parseFloat(custo) || (moHoras * moPrecoHora);
+            }
         }
     });
 
-    // Alternar para Cadastro
-    tabRegister.addEventListener('click', () => {
-        authMode = 'register';
-        tabRegister.classList.add('active');
-        tabLogin.classList.remove('active');
-        confirmPasswordGroup.style.display = 'block';
-        confirmPasswordInput.required = true;
-        btnText.textContent = "Cadastrar";
-        if (btnIcon) {
-            btnIcon.className = "fas fa-user-plus";
-        }
-    });
+    // Cálculo dos preços dos pacotes (Acréscimos Reais calculados dinamicamente)
+    const getAdicionaisPreco = (packageName) => {
+        const itens = serviçosAdicionais[packageName] || [];
+        return itens.reduce((sum, item) => {
+            if (adicionaisDesmarcados[item.nome]) {
+                return sum;
+            }
+            return sum + item.preco;
+        }, 0);
+    };
 
-    // Submissão do Formulário
-    landingForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        console.log("Formulário submetido. Modo ativo:", authMode);
-        const isLocalFile = window.location.protocol === 'file:' || 
-                            window.location.hostname === 'localhost' || 
-                            window.location.hostname === '127.0.0.1';
+    const adicionaisBasico = getAdicionaisPreco('basico');
+    const adicionaisIntermediario = getAdicionaisPreco('intermediario');
+    const adicionaisPremium = getAdicionaisPreco('premium');
 
-        // Bypass/Simulação offline para ambiente local apenas se o Firebase não estiver inicializado
-        const useLocalSimulation = !db && isLocalFile;
-        if (useLocalSimulation) {
-            if (authMode === 'login') {
-                if (email.includes('@') && password.length >= 6) {
-                    showToast("Login local de teste realizado!", "success");
-                    document.getElementById('user-email-display').textContent = email + " (Local)";
-                    const landingScreen = document.getElementById('landing-screen');
-                    const mainApp = document.getElementById('main-app');
-                    landingScreen.classList.add('hide');
-                    setTimeout(() => {
-                        landingScreen.style.display = 'none';
-                        mainApp.style.display = 'block';
-                        document.body.style.overflow = '';
-                    }, 600);
-                } else {
-                    showToast("Para testes locais, use um e-mail válido e senha de no mínimo 6 caracteres.", "error");
-                }
+    // Base com MO incluída
+    const totalComMO = totalPrice;
+    const priceBasico = totalComMO + adicionaisBasico;
+    const priceIntermediario = totalComMO + adicionaisIntermediario;
+    const pricePremium = totalComMO + adicionaisPremium;
+
+    // Atualização dos valores exibidos nos boxes superiores
+    const priceBasicoElem = document.getElementById('price-basico');
+    const priceIntermediarioElem = document.getElementById('price-intermediario');
+    const pricePremiumElem = document.getElementById('price-premium');
+    const priceFabricaElem = document.getElementById('rev-total-price');
+
+    if (priceBasicoElem) priceBasicoElem.innerText = formatCurrency(priceBasico);
+    if (priceIntermediarioElem) priceIntermediarioElem.innerText = formatCurrency(priceIntermediario);
+    if (pricePremiumElem) pricePremiumElem.innerText = formatCurrency(pricePremium);
+    if (priceFabricaElem) priceFabricaElem.innerText = formatCurrency(totalComMO);
+
+    // Sincronizar classes de pacotes ativos/inativos no DOM
+    const packages = ['basico', 'intermediario', 'premium', 'fabrica'];
+    packages.forEach(p => {
+        const box = document.getElementById(`box-${p}`);
+        if (box) {
+            if (p === selectedPackageName) {
+                box.classList.add('active-package');
             } else {
-                // Cadastro local simulado
-                const confirmPassword = confirmPasswordInput.value;
-                if (!email.includes('@')) {
-                    showToast("Insira um e-mail válido para o cadastro.", "error");
-                    return;
-                }
-                if (password !== confirmPassword) {
-                    showToast("As senhas não coincidem.", "error");
-                    return;
-                }
-                if (password.length < 6) {
-                    showToast("A senha deve conter no mínimo 6 caracteres.", "error");
-                    return;
-                }
-                showToast("Conta de teste criada localmente!", "success");
-                document.getElementById('user-email-display').textContent = email + " (Local)";
-                const landingScreen = document.getElementById('landing-screen');
-                const mainApp = document.getElementById('main-app');
-                landingScreen.classList.add('hide');
-                setTimeout(() => {
-                    landingScreen.style.display = 'none';
-                    mainApp.style.display = 'block';
-                    document.body.style.overflow = '';
-                }, 600);
-            }
-            return;
-        }
-
-        if (!firebase.apps.length) {
-            showToast("Firebase não está conectado ou inicializado corretamente.", "error");
-            return;
-        }
-
-        if (authMode === 'login') {
-            // Login convencional
-            try {
-                showToast("Efetuando login...", "success");
-                await firebase.auth().signInWithEmailAndPassword(email, password);
-                showToast("Login realizado com sucesso!", "success");
-            } catch (error) {
-                console.error("Erro no login:", error);
-                let msg = "Erro ao fazer login. Verifique suas credenciais.";
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                    msg = "E-mail ou senha inválidos.";
-                } else if (error.code === 'auth/invalid-email') {
-                    msg = "Formato de e-mail inválido.";
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    msg = "O provedor E-mail/Senha está desativado no Console do Firebase (Authentication).";
-                } else if (error.message) {
-                    msg = error.message;
-                }
-                showToast(msg, "error");
-            }
-        } else {
-            // Cadastro convencional
-            const confirmPassword = confirmPasswordInput.value;
-
-            // Validação de e-mail
-            if (!email.includes('@')) {
-                showToast("Por favor, insira um e-mail válido.", "error");
-                return;
-            }
-
-            // Validação de confirmação de senha
-            if (password !== confirmPassword) {
-                showToast("As senhas não coincidem.", "error");
-                return;
-            }
-
-            if (password.length < 6) {
-                showToast("A senha deve conter no mínimo 6 caracteres.", "error");
-                return;
-            }
-
-            try {
-                showToast("Criando conta...", "success");
-                await firebase.auth().createUserWithEmailAndPassword(email, password);
-            } catch (error) {
-                console.error("Erro no cadastro:", error);
-                let msg = "Erro ao criar conta. Tente novamente.";
-                if (error.code === 'auth/email-already-in-use') {
-                    msg = "Este e-mail já está em uso.";
-                } else if (error.code === 'auth/invalid-email') {
-                    msg = "Formato de e-mail inválido.";
-                } else if (error.code === 'auth/weak-password') {
-                    msg = "A senha escolhida é muito fraca.";
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    msg = "O provedor E-mail/Senha está desativado no Console do Firebase (Authentication).";
-                } else if (error.message) {
-                    msg = error.message;
-                }
-                showToast(msg, "error");
+                box.classList.remove('active-package');
             }
         }
     });
 
-    // Login com Google
-    googleLoginBtn.addEventListener('click', async () => {
-        if (window.location.protocol === 'file:') {
-            showToast("O login com Google exige que a aplicação esteja rodando em um servidor local (ex: http://localhost:8000). Use e-mail de teste no formulário.", "error");
-            return;
-        }
+    const partsTableBody = document.getElementById('rev-parts-table-body');
+    partsTableBody.innerHTML = '';
 
-        if (!firebase.apps.length) {
-            showToast("Firebase não está conectado ou inicializado corretamente.", "error");
-            return;
-        }
+    let subtotalPecas = 0;
+    let indexItem = 0;
+    let totalPecasExibidas = 0;
 
-        try {
-            showToast("Conectando com o Google...", "success");
-            const provider = new firebase.auth.GoogleAuthProvider();
-            await firebase.auth().signInWithPopup(provider);
-            showToast("Login com Google realizado!", "success");
-        } catch (error) {
-            console.error("Erro ao autenticar com o Google:", error);
-            let msg = "Erro ao autenticar com o Google. Tente novamente.";
-            if (error.code === 'auth/operation-not-allowed') {
-                msg = "O provedor Google Sign-In está desativado no Console do Firebase (Authentication).";
-            } else if (error.code === 'auth/unauthorized-domain') {
-                msg = "Este domínio não está autorizado no Console do Firebase (Authorized Domains). Adicione-o.";
-            } else if (error.message) {
-                msg = error.message;
+    currentRevCar.itens.forEach(item => {
+        const qty = item.trocas[revName];
+        const custo = item.custos[revName];
+
+        if (item.tipo !== 'serviço') {
+            const precoUnit = parseFloat(item.preco_unitario) || 0;
+            const itemQty = (qty !== undefined && qty > 0) ? qty : 0;
+            const totalItem = (qty !== undefined && qty > 0) ? (parseFloat(custo) || (qty * precoUnit)) : 0;
+
+            subtotalPecas += totalItem;
+
+            if (itemQty > 0) {
+                const tr = document.createElement('tr');
+                const textStyle = 'class="text-right td-highlight"';
+
+                tr.innerHTML = `
+                    <td class="item-name-cell" data-label="Componente">${item.nome}</td>
+                    <td data-label="Código (PN)"><span class="item-pn">${item.pn}</span></td>
+                    <td class="text-right" data-label="Preço Unit.">${formatCurrency(precoUnit)}</td>
+                    <td ${textStyle} data-label="QTD">${itemQty}</td>
+                    <td ${textStyle} data-label="Subtotal">${formatCurrency(totalItem)}</td>
+                `;
+                partsTableBody.appendChild(tr);
+                totalPecasExibidas++;
+                indexItem++;
             }
-            showToast(msg, "error");
-        }
-    });
-}
-
-// 1. Carregamento das Configurações (config.js ou localStorage)
-function loadConfiguration() {
-    // Prioridade 1: LocalStorage (configurações salvas pela UI)
-    const localApiKey = localStorage.getItem('sm_fb_apiKey');
-    const localAuthDomain = localStorage.getItem('sm_fb_authDomain');
-    const localProjectId = localStorage.getItem('sm_fb_projectId');
-    const localStorageBucket = localStorage.getItem('sm_fb_storageBucket');
-    const localMessagingSenderId = localStorage.getItem('sm_fb_messagingSenderId');
-    const localAppId = localStorage.getItem('sm_fb_appId');
-    const localPin = localStorage.getItem('sm_fb_pin');
-
-    if (localApiKey && localProjectId) {
-        activeConfig.firebaseConfig = {
-            apiKey: localApiKey,
-            authDomain: localAuthDomain || "",
-            projectId: localProjectId,
-            storageBucket: localStorageBucket || "",
-            messagingSenderId: localMessagingSenderId || "",
-            appId: localAppId || ""
-        };
-        activeConfig.adminPin = localPin || "1234";
-    } else if (typeof CONFIG !== 'undefined' && CONFIG.FIREBASE_CONFIG) {
-        // Prioridade 2: Variáveis definidas no config.js
-        activeConfig.firebaseConfig = { ...CONFIG.FIREBASE_CONFIG };
-        activeConfig.adminPin = CONFIG.ADMIN_PIN || "1234";
-    }
-
-    // Se estiver vazio, exibir modal de configuração inicial
-    if (!activeConfig.firebaseConfig.apiKey || !activeConfig.firebaseConfig.projectId) {
-        showModal(elements.configModal);
-    }
-}
-
-// 2. Inicialização do Firebase
-function initFirebase() {
-    if (!activeConfig.firebaseConfig.apiKey || !activeConfig.firebaseConfig.projectId) {
-        showToast("Configure as credenciais do Firebase para conectar o banco de dados.", "error");
-        return;
-    }
-
-    try {
-        // Reinicializa o app se ele já existir (para atualizar as configurações)
-        if (firebase.apps.length > 0) {
-            // Deleta o app anterior para reinicializar com novas credenciais
-            firebase.app().delete().then(() => {
-                firebase.initializeApp(activeConfig.firebaseConfig);
-                db = firebase.firestore();
-                console.log("Firebase reinicializado com sucesso.");
-                setupAuthListener();
-            });
-        } else {
-            firebase.initializeApp(activeConfig.firebaseConfig);
-            db = firebase.firestore();
-            console.log("Firebase inicializado com sucesso.");
-            setupAuthListener();
-        }
-    } catch (error) {
-        console.error("Erro ao inicializar Firebase:", error);
-        showToast("Erro ao conectar ao Firebase. Verifique suas credenciais.", "error");
-    }
-}
-
-let authListenerUnsubscribe = null;
-function setupAuthListener() {
-    if (authListenerUnsubscribe) {
-        authListenerUnsubscribe();
-    }
-    authListenerUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
-        const landingScreen = document.getElementById('landing-screen');
-        const mainApp = document.getElementById('main-app');
-        
-        if (user) {
-            console.log("Usuário autenticado:", user.email);
-            
-            // Verificar se o usuário está liberado no banco de dados
-            if (db) {
-                try {
-                    console.log("Verificando documento do usuário no Firestore para o UID:", user.uid);
-                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                    if (!userDoc.exists) {
-                        console.log("Documento não existe. Criando novo usuário pendente no Firestore...");
-                        // Novo cadastro ou usuário sem registro no Firestore
-                        await db.collection('usuarios').doc(user.uid).set({
-                            uid: user.uid,
-                            email: user.email,
-                            aprovado: false,
-                            created_at: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        console.log("Documento de usuário pendente criado com sucesso no Firestore.");
-                        showToast("Cadastro realizado! Aguardando liberação do administrador.", "success");
-                        await firebase.auth().signOut();
-                        return;
-                    }
-                    
-                    const userData = userDoc.data();
-                    console.log("Documento encontrado no Firestore. Status aprovado:", userData.aprovado);
-                    if (!userData.aprovado) {
-                        showToast("Sua conta está aguardando liberação do administrador.", "error");
-                        await firebase.auth().signOut();
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Erro ao verificar liberação de usuário:", error);
-                    if (error.code === 'permission-denied') {
-                        showToast("Erro de permissão no Firebase. Configure as Regras do Firestore para a coleção 'usuarios'.", "error");
-                    } else {
-                        showToast("Erro de conexão ao validar sua conta.", "error");
-                    }
-                    await firebase.auth().signOut();
-                    return;
-                }
-            }
-            
-            document.getElementById('user-email-display').textContent = user.email;
-            
-            // Transição suave para o App
-            landingScreen.classList.add('hide');
-            setTimeout(() => {
-                landingScreen.style.display = 'none';
-                mainApp.style.display = 'block';
-                document.body.style.overflow = '';
-            }, 600);
-        } else {
-            console.log("Usuário não autenticado");
-            document.getElementById('user-email-display').textContent = "-";
-            
-            // Exibir a tela de login
-            mainApp.style.display = 'none';
-            landingScreen.style.display = 'flex';
-            landingScreen.classList.remove('hide');
-            
-            resetVehicleDisplay();
-        }
-    });
-}
-
-// 3. Configuração dos Ouvintes de Eventos (Event Listeners)
-function setupEventListeners() {
-    // Form de Busca
-    elements.searchForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const query = elements.searchInput.value.trim().toUpperCase();
-        if (!query) return;
-        hideSuggestions();
-        await searchVehicle(query);
-    });
-
-    // ===== AUTOCOMPLETE: Busca em tempo real ao digitar =====
-    let autocompleteTimer = null;
-    let autocompleteActiveIndex = -1;
-
-    elements.searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim().toUpperCase();
-        clearTimeout(autocompleteTimer);
-        autocompleteActiveIndex = -1;
-
-        if (query.length < 1) {
-            hideSuggestions();
-            return;
-        }
-
-        // Debounce de 300ms para não sobrecarregar o Firestore
-        autocompleteTimer = setTimeout(() => {
-            searchVehiclesAutocomplete(query);
-        }, 300);
-    });
-
-    // Navegação por teclado no autocomplete
-    elements.searchInput.addEventListener('keydown', (e) => {
-        const dropdown = elements.searchSuggestions;
-        if (!dropdown.classList.contains('active')) return;
-
-        const items = dropdown.querySelectorAll('.autocomplete-item');
-        if (!items.length) return;
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            autocompleteActiveIndex = Math.min(autocompleteActiveIndex + 1, items.length - 1);
-            updateActiveItem(items, autocompleteActiveIndex);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            autocompleteActiveIndex = Math.max(autocompleteActiveIndex - 1, 0);
-            updateActiveItem(items, autocompleteActiveIndex);
-        } else if (e.key === 'Enter' && autocompleteActiveIndex >= 0) {
-            e.preventDefault();
-            items[autocompleteActiveIndex].click();
-        } else if (e.key === 'Escape') {
-            hideSuggestions();
         }
     });
 
-    // Fecha o dropdown ao clicar fora
-    document.addEventListener('click', (e) => {
-        if (!elements.searchInput.contains(e.target) && !elements.searchSuggestions.contains(e.target)) {
-            hideSuggestions();
-        }
-    });
+    // Injetar os itens adicionais de serviço correspondentes ao pacote selecionado na tabela
+    const adicionais = serviçosAdicionais[selectedPackageName] || [];
+    adicionais.forEach(item => {
+        const tr = document.createElement('tr');
+        let packageColor = '';
+        if (selectedPackageName === 'basico') packageColor = '#6b7280';
+        else if (selectedPackageName === 'intermediario') packageColor = '#22c55e';
+        else if (selectedPackageName === 'premium') packageColor = '#ef4444';
 
-    // Form de Cadastro
-    elements.registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const placa = elements.regPlaca.value.trim().toUpperCase();
-        const chassi = elements.regChassi.value.trim().toUpperCase();
-        const concessionaria = elements.regConcessionaria.value.trim();
-        const consultor = elements.regConsultor.value.trim();
+        const isDesmarcado = !!adicionaisDesmarcados[item.nome];
+        const buttonTitle = isDesmarcado ? `Clique para incluir ${item.nome}` : `Clique para desmarcar ${item.nome}`;
 
-        if (!placa || !chassi || !concessionaria || !consultor) {
-            showToast("Preencha todos os campos do veículo.", "error");
-            return;
-        }
-
-        await registerVehicle(placa, chassi, concessionaria, consultor);
-    });
-
-
-
-    // Salvar Configurações do Firebase
-    elements.configForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const apiKey = elements.cfgApiKey.value.trim();
-        const authDomain = elements.cfgAuthDomain.value.trim();
-        const projectId = elements.cfgProjectId.value.trim();
-        const storageBucket = elements.cfgStorageBucket.value.trim();
-        const messagingSenderId = elements.cfgMessagingSenderId.value.trim();
-        const appId = elements.cfgAppId.value.trim();
-        const pin = elements.cfgPin.value.trim() || "1234";
-
-        localStorage.setItem('sm_fb_apiKey', apiKey);
-        localStorage.setItem('sm_fb_authDomain', authDomain);
-        localStorage.setItem('sm_fb_projectId', projectId);
-        localStorage.setItem('sm_fb_storageBucket', storageBucket);
-        localStorage.setItem('sm_fb_messagingSenderId', messagingSenderId);
-        localStorage.setItem('sm_fb_appId', appId);
-        localStorage.setItem('sm_fb_pin', pin);
-
-        activeConfig.firebaseConfig = {
-            apiKey,
-            authDomain,
-            projectId,
-            storageBucket,
-            messagingSenderId,
-            appId
-        };
-        activeConfig.adminPin = pin;
-
-        hideModal(elements.configModal);
-        showToast("Configurações salvas e aplicadas!", "success");
-        initFirebase();
-    });
-
-    // Fechar modais
-    elements.closeConfig.addEventListener('click', () => hideModal(elements.configModal));
-
-    // Abrir modal de configuração ao clicar com botão direito no menu do usuário ou no logotipo principal
-    const configTrigger = elements.userMenu || elements.logoMain;
-    if (configTrigger) {
-        configTrigger.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            elements.cfgApiKey.value = activeConfig.firebaseConfig.apiKey;
-            elements.cfgAuthDomain.value = activeConfig.firebaseConfig.authDomain;
-            elements.cfgProjectId.value = activeConfig.firebaseConfig.projectId;
-            elements.cfgStorageBucket.value = activeConfig.firebaseConfig.storageBucket;
-            elements.cfgMessagingSenderId.value = activeConfig.firebaseConfig.messagingSenderId;
-            elements.cfgAppId.value = activeConfig.firebaseConfig.appId;
-            elements.cfgPin.value = activeConfig.adminPin;
-            showModal(elements.configModal);
-        });
-    }
-
-    // Clique livre no tabuleiro principal para adicionar/remover checks
-    if (elements.mainBoard) {
-        elements.mainBoard.addEventListener('click', async (e) => {
-            // Se clicou em um check existente, remove
-            const existing = e.target.closest('.check-mark-free');
-            if (existing) {
-                if (!currentVehicle) return;
-                const idx = parseInt(existing.dataset.index);
-                const marcacoes = [...(currentVehicle.marcacoes || [])];
-                marcacoes.splice(idx, 1);
-                await saveCheckmarks(marcacoes);
-                return;
-            }
-
-            if (!currentVehicle) {
-                showToast("Busque ou cadastre um veículo antes de marcar as revisões.", "error");
-                return;
-            }
-
-            const marcacoes = [...(currentVehicle.marcacoes || [])];
-            if (marcacoes.length >= 10) {
-                showToast("Máximo de 10 revisões atingido. Clique em um check para remover.", "error");
-                return;
-            }
-
-            const rect = elements.mainBoard.getBoundingClientRect();
-            const x = parseFloat(((e.clientX - rect.left) / rect.width * 100).toFixed(2));
-            const y = parseFloat(((e.clientY - rect.top) / rect.height * 100).toFixed(2));
-
-            marcacoes.push({ x, y });
-            await saveCheckmarks(marcacoes);
-        });
-    }
-
-    // Event Listener do Logout
-    const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-            try {
-                await firebase.auth().signOut();
-                showToast("Sessão encerrada!", "success");
-            } catch (error) {
-                console.error("Erro ao fazer logout:", error);
-                showToast("Erro ao deslogar.", "error");
-            }
-        });
-    }
-
-    // Event Listeners do Voucher
-    if (elements.btnGerarVoucher) {
-        elements.btnGerarVoucher.addEventListener('click', () => {
-            if (!currentVehicle) {
-                showToast("Busque ou cadastre um veículo antes para gerar o voucher.", "error");
-                return;
-            }
-            
-            // Preenche os dados no voucher
-            elements.voucherPlaca.textContent = currentVehicle.placa;
-            elements.voucherChassi.textContent = currentVehicle.chassi;
-            elements.voucherConsultor.textContent = currentVehicle.consultor || '-';
-            
-            const hoje = new Date();
-            elements.voucherData.textContent = hoje.toLocaleDateString('pt-BR');
-            
-            showModal(elements.voucherModal);
-        });
-    }
-
-    if (elements.closeVoucher) {
-        elements.closeVoucher.addEventListener('click', () => {
-            hideModal(elements.voucherModal);
-        });
-    }
-
-    if (elements.btnPrintVoucher) {
-        elements.btnPrintVoucher.addEventListener('click', async () => {
-            showToast("Gerando PDF em alta definição...", "success");
-
-            const element = document.getElementById('voucher-print-area');
-
-            // 1. Aplica classe que fixa as dimensões A4 Paisagem
-            element.classList.add('exporting-pdf');
-
-            // 2. Aguarda o browser recalcular o layout com as novas dimensões CSS
-            await new Promise(r => setTimeout(r, 150));
-
-            const opt = {
-                margin:      0,
-                filename:    `voucher_${currentVehicle.placa || 'san_marino'}.pdf`,
-                image:       { type: 'jpeg', quality: 1.0 },
-                html2canvas: { scale: 3, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', imageTimeout: 0, logging: false },
-                jsPDF:       { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-
-            // 3. Gera e baixa o PDF
-            html2pdf().set(opt).from(element).save()
-                .then(() => {
-                    element.classList.remove('exporting-pdf');
-                    showToast("PDF baixado com sucesso!", "success");
-                    setTimeout(() => hideModal(elements.voucherModal), 1000);
-                })
-                .catch(err => {
-                    element.classList.remove('exporting-pdf');
-                    console.error("Erro ao gerar PDF:", err);
-                    showToast("Erro ao gerar o PDF do voucher.", "error");
-                });
-        });
-    }
-
-    // Event Listeners do Dashboard do Gestor
-    if (elements.btnManagerDashboard) {
-        elements.btnManagerDashboard.addEventListener('click', () => {
-            openManagerDashboard();
-        });
-    }
-
-    if (elements.closeManagerDashboard) {
-        elements.closeManagerDashboard.addEventListener('click', () => {
-            hideModal(elements.managerModal);
-        });
-    }
-
-    if (elements.btnExportExcel) {
-        elements.btnExportExcel.addEventListener('click', () => {
-            exportManagerDataToExcel();
-        });
-    }
-
-    // Filtros em tempo real
-    const filterInputs = [elements.filterPlaca, elements.filterChassi, elements.filterConcessionaria, elements.filterConsultor];
-    filterInputs.forEach(input => {
-        if (input) {
-            input.addEventListener('input', () => {
-                filterManagerDashboardTable();
-            });
-        }
-    });
-}
-
-// 4. Funções do Firestore
-
-// Busca Veículo por Placa ou Chassi
-async function searchVehicle(query) {
-    if (!db) {
-        showToast("Banco de dados Firebase não inicializado.", "error");
-        return;
-    }
-
-    showLoader(true);
-
-    try {
-        const veiculosRef = db.collection('veiculos');
-
-        // Executa duas buscas paralelas (uma por placa e outra por chassi)
-        const qPlaca = veiculosRef.where('placa', '==', query).limit(1).get();
-        const qChassi = veiculosRef.where('chassi', '==', query).limit(1).get();
-
-        const [snapshotPlaca, snapshotChassi] = await Promise.all([qPlaca, qChassi]);
-
-        let docEncontrado = null;
-
-        if (!snapshotPlaca.empty) {
-            docEncontrado = snapshotPlaca.docs[0];
-        } else if (!snapshotChassi.empty) {
-            docEncontrado = snapshotChassi.docs[0];
-        }
-
-        if (docEncontrado) {
-            // Mapeia o ID do documento junto com os dados
-            currentVehicle = {
-                id: docEncontrado.id,
-                ...docEncontrado.data()
-            };
-            displayVehicleData(currentVehicle);
-            updateRoadVisuals(currentVehicle);
-            showToast("Veículo localizado com sucesso!", "success");
-        } else {
-            showToast("Veículo não localizado no Firebase. Verifique ou cadastre.", "error");
-            resetVehicleDisplay();
-        }
-    } catch (error) {
-        console.error("Erro na busca do Firestore:", error);
-        showToast("Erro ao buscar veículo no Firebase.", "error");
-    } finally {
-        showLoader(false);
-        hideSuggestions();
-    }
-}
-
-// Cadastra um novo veículo
-async function registerVehicle(placa, chassi, concessionaria, consultor) {
-    if (!db) {
-        showToast("Banco de dados Firebase não inicializado.", "error");
-        return;
-    }
-
-    showLoader(true);
-
-    try {
-        const veiculosRef = db.collection('veiculos');
-
-        // Verifica duplicidade no Firestore
-        const qPlaca = veiculosRef.where('placa', '==', placa).limit(1).get();
-        const qChassi = veiculosRef.where('chassi', '==', chassi).limit(1).get();
-
-        const [snapshotPlaca, snapshotChassi] = await Promise.all([qPlaca, qChassi]);
-
-        if (!snapshotPlaca.empty || !snapshotChassi.empty) {
-            showToast("Veículo com esta Placa ou Chassi já está cadastrado.", "error");
-            showLoader(false);
-            return;
-        }
-
-        // Dados padrão para o novo veículo
-        const novoVeiculo = {
-            placa: placa,
-            chassi: chassi,
-            concessionaria: concessionaria,
-            consultor: consultor,
-            marcacoes: [],
-            created_at: firebase.firestore.FieldValue.serverTimestamp(),
-            updated_at: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        const docRef = await veiculosRef.add(novoVeiculo);
-        
-        // Carrega o veículo cadastrado no estado local
-        currentVehicle = {
-            id: docRef.id,
-            ...novoVeiculo,
-            created_at: new Date() // Fallback temporário até nova leitura se necessário
-        };
-
-        displayVehicleData(currentVehicle);
-        updateRoadVisuals(currentVehicle);
-        elements.registerForm.reset();
-        invalidateVehiclesCache();
-        showToast("Veículo cadastrado no Firebase com sucesso!", "success");
-    } catch (error) {
-        console.error("Erro ao inserir veículo no Firestore:", error);
-        showToast("Erro ao cadastrar veículo no Firebase.", "error");
-    } finally {
-        showLoader(false);
-    }
-}
-
-// Salva marcacoes no Firestore e re-renderiza
-async function saveCheckmarks(marcacoes) {
-    if (!db || !currentVehicle) return;
-    try {
-        await db.collection('veiculos').doc(currentVehicle.id).update({
-            marcacoes,
-            updated_at: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        currentVehicle.marcacoes = marcacoes;
-        renderCheckmarks(marcacoes, elements.mainBoard);
-        renderCheckmarks(marcacoes, elements.voucherBoard);
-    } catch (error) {
-        console.error('Erro ao salvar marcações:', error);
-        showToast('Erro ao salvar no Firebase.', 'error');
-    }
-}
-
-// Renderiza os checks livres em um board
-function renderCheckmarks(marcacoes, boardEl) {
-    if (!boardEl) return;
-    // Remove checks antigos
-    boardEl.querySelectorAll('.check-mark-free').forEach(el => el.remove());
-    // Adiciona cada marcação
-    (marcacoes || []).forEach((pos, idx) => {
-        const el = document.createElement('div');
-        el.className = 'check-mark-free';
-        el.dataset.index = idx;
-        el.style.left = pos.x + '%';
-        el.style.top  = pos.y + '%';
-        el.innerHTML = '<i class="fas fa-check"></i>';
-        boardEl.appendChild(el);
-    });
-}
-
-// 4.1 Autocomplete - Busca veículos enquanto o usuário digita
-let vehiclesCache = null;
-let vehiclesCacheTimestamp = 0;
-const CACHE_TTL = 60000; // 1 minuto de cache
-
-async function searchVehiclesAutocomplete(query) {
-    if (!db) return;
-
-    try {
-        let allVehicles = [];
-        const now = Date.now();
-
-        // Usa cache se disponível e válido
-        if (vehiclesCache && (now - vehiclesCacheTimestamp) < CACHE_TTL) {
-            allVehicles = vehiclesCache;
-        } else {
-            // Busca todos os veículos (para coleções pequenas/médias)
-            const snapshot = await db.collection('veiculos').get();
-            allVehicles = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            vehiclesCache = allVehicles;
-            vehiclesCacheTimestamp = now;
-        }
-
-        // Filtra localmente por placa ou chassi
-        const filtered = allVehicles.filter(v => {
-            const placa = (v.placa || '').toUpperCase();
-            const chassi = (v.chassi || '').toUpperCase();
-            return placa.includes(query) || chassi.includes(query);
-        }).slice(0, 8); // Limita a 8 resultados
-
-        renderSuggestions(filtered, query);
-    } catch (error) {
-        console.error('Erro no autocomplete:', error);
-        hideSuggestions();
-    }
-}
-
-function renderSuggestions(vehicles, query) {
-    const dropdown = elements.searchSuggestions;
-    dropdown.innerHTML = '';
-
-    if (vehicles.length === 0) {
-        dropdown.innerHTML = `
-            <div class="autocomplete-empty">
-                <i class="fas fa-car-crash"></i>
-                Nenhum veículo encontrado
-            </div>
-        `;
-        dropdown.classList.add('active');
-        return;
-    }
-
-    vehicles.forEach(vehicle => {
-        const item = document.createElement('div');
-        item.className = 'autocomplete-item';
-
-        const placaHighlighted = highlightMatch(vehicle.placa || '', query);
-        const chassiHighlighted = highlightMatch(vehicle.chassi || '', query);
-
-        item.innerHTML = `
-            <div class="autocomplete-item-icon">
-                <i class="fas fa-car"></i>
-            </div>
-            <div class="autocomplete-item-info">
-                <span class="autocomplete-item-placa">${placaHighlighted}</span>
-                <span class="autocomplete-item-chassi">Chassi: ${chassiHighlighted}</span>
+        const cellNomeContent = `
+            <div class="clickable-service-name ${isDesmarcado ? 'desmarcado' : ''}" onclick="toggleServicoAdicional('${item.nome}', event)" title="${buttonTitle}">
+                <span class="status-dot" style="background-color: ${isDesmarcado ? 'var(--text-muted)' : packageColor};"></span>
+                <span>${item.nome}</span>
             </div>
         `;
 
-        item.addEventListener('click', async () => {
-            elements.searchInput.value = vehicle.placa;
-            hideSuggestions();
-            await searchVehicle(vehicle.placa.toUpperCase());
-        });
+        let cellQtdContent = '1';
+        let cellSubtotalContent = formatCurrency(item.preco);
+        let extraRowStyle = '';
 
-        dropdown.appendChild(item);
+        if (isDesmarcado) {
+            cellQtdContent = '0';
+            cellSubtotalContent = formatCurrency(0);
+            extraRowStyle = ' style="opacity: 0.5;"';
+        }
+
+        tr.innerHTML = `
+            <td class="item-name-cell" data-label="Componente" style="font-weight: 600; color: ${packageColor};"${extraRowStyle}>${cellNomeContent}</td>
+            <td data-label="Código (PN)"${extraRowStyle}><span class="item-pn" style="background-color: rgba(0, 0, 0, 0.04); color: ${packageColor}; border-color: rgba(0, 0, 0, 0.08);">${item.pn}</span></td>
+            <td class="text-right"${extraRowStyle} data-label="Preço Unit.">${formatCurrency(item.preco)}</td>
+            <td class="text-right td-highlight"${extraRowStyle} style="color: ${packageColor};" data-label="QTD">${cellQtdContent}</td>
+            <td class="text-right td-highlight"${extraRowStyle} style="color: ${packageColor};" data-label="Subtotal">${cellSubtotalContent}</td>
+        `;
+        partsTableBody.appendChild(tr);
+        totalPecasExibidas++;
     });
 
-    dropdown.classList.add('active');
-}
-
-function highlightMatch(text, query) {
-    if (!query) return text;
-    const upperText = text.toUpperCase();
-    const index = upperText.indexOf(query);
-    if (index === -1) return text;
-
-    const before = text.substring(0, index);
-    const match = text.substring(index, index + query.length);
-    const after = text.substring(index + query.length);
-    return `${before}<span class="autocomplete-highlight">${match}</span>${after}`;
-}
-
-function hideSuggestions() {
-    if (elements.searchSuggestions) {
-        elements.searchSuggestions.classList.remove('active');
-        elements.searchSuggestions.innerHTML = '';
-    }
-}
-
-function updateActiveItem(items, activeIndex) {
-    items.forEach((item, i) => {
-        item.classList.toggle('active', i === activeIndex);
-    });
-    // Scroll into view se necessário
-    if (items[activeIndex]) {
-        items[activeIndex].scrollIntoView({ block: 'nearest' });
-    }
-}
-
-// Invalida o cache quando um novo veículo é cadastrado
-function invalidateVehiclesCache() {
-    vehiclesCache = null;
-    vehiclesCacheTimestamp = 0;
-}
-
-// 5. Utilitários de UI e Exibição
-
-function displayVehicleData(vehicle) {
-    elements.infoPlaca.textContent = vehicle.placa;
-    elements.infoChassi.textContent = vehicle.chassi;
-    elements.infoConcessionaria.textContent = vehicle.concessionaria || '-';
-    elements.infoConsultor.textContent = vehicle.consultor || '-';
-    
-    // Converte timestamp do Firebase ou data normal
-    let dateStr = "-";
-    if (vehicle.created_at) {
-        const date = (vehicle.created_at.toDate) ? vehicle.created_at.toDate() : new Date(vehicle.created_at);
-        dateStr = date.toLocaleDateString('pt-BR');
-    }
-    elements.infoData.textContent = dateStr;
-    
-    elements.vehicleDetails.style.display = 'block';
-}
-
-function resetVehicleDisplay() {
-    currentVehicle = null;
-    elements.vehicleDetails.style.display = 'none';
-    if (elements.mainBoard) elements.mainBoard.querySelectorAll('.check-mark-free').forEach(el => el.remove());
-    if (elements.voucherBoard) elements.voucherBoard.querySelectorAll('.check-mark-free').forEach(el => el.remove());
-}
-
-function updateRoadVisuals(vehicle) {
-    const marcacoes = vehicle.marcacoes || [];
-    renderCheckmarks(marcacoes, elements.mainBoard);
-    renderCheckmarks(marcacoes, elements.voucherBoard);
-}
-
-function showModal(modal) {
-    modal.classList.add('active');
-}
-
-function hideModal(modal) {
-    modal.classList.remove('active');
-}
-
-let toastTimeout;
-function showToast(message, type = "success") {
-    clearTimeout(toastTimeout);
-    
-    elements.toastMsg.textContent = message;
-    elements.toast.className = `toast active ${type}`;
-    
-    if (type === "success") {
-        elements.toastIcon.className = "fas fa-check-circle";
-    } else {
-        elements.toastIcon.className = "fas fa-exclamation-circle";
-    }
-
-    toastTimeout = setTimeout(() => {
-        elements.toast.classList.remove('active');
-    }, 4000);
-}
-
-function showLoader(show) {
-    const btn = elements.searchForm.querySelector('button');
-    if (show) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-    } else {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-search"></i> Buscar';
-    }
-}
-
-// ===== LÓGICA DO DASHBOARD DO GESTOR (CONSULTA E KPI) =====
-
-async function openManagerDashboard() {
-    if (!db) {
-        showToast("Banco de dados Firebase não inicializado.", "error");
-        return;
-    }
-
-    // Limpa filtros antigos
-    if (elements.filterPlaca) elements.filterPlaca.value = '';
-    if (elements.filterChassi) elements.filterChassi.value = '';
-    if (elements.filterConcessionaria) elements.filterConcessionaria.value = '';
-    if (elements.filterConsultor) elements.filterConsultor.value = '';
-
-    // Abre o modal
-    showModal(elements.managerModal);
-
-    // Mostra indicador de carregamento
-    if (elements.managerTableBody) {
-        elements.managerTableBody.innerHTML = `
+    if (totalPecasExibidas === 0) {
+        partsTableBody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px; display: block; color: var(--brand-green);"></i>
-                    Carregando dados do servidor...
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Nenhum componente físico cadastrado para este veículo.
                 </td>
             </tr>
         `;
     }
 
+    document.getElementById('rev-parts-count').innerText = `${indexItem + adicionais.length} item(ns) total(is)`;
+
+    document.getElementById('rev-mo-hours').innerText = `${moHoras.toFixed(2)}h`;
+    document.getElementById('rev-mo-rate').innerText = formatCurrency(moPrecoHora);
+    document.getElementById('rev-mo-subtotal').innerText = formatCurrency(moSubtotal);
+
+    // Lógica do resumo consolidado do pacote (já com MO incluída via totalComMO)
+    let finalPrice = totalComMO;
+    let adjustmentAmount = 0;
+    let adjustmentLabel = '';
+    let packageColor = '';
+
+    if (selectedPackageName === 'basico') {
+        finalPrice = priceBasico;
+        adjustmentAmount = adicionaisBasico;
+        adjustmentLabel = 'Adicionais Pacote Básico:';
+        packageColor = '#6b7280';
+    } else if (selectedPackageName === 'intermediario') {
+        finalPrice = priceIntermediario;
+        adjustmentAmount = adicionaisIntermediario;
+        adjustmentLabel = 'Adicionais Pacote Intermediário:';
+        packageColor = '#22c55e';
+    } else if (selectedPackageName === 'premium') {
+        finalPrice = pricePremium;
+        adjustmentAmount = adicionaisPremium;
+        adjustmentLabel = 'Adicionais Pacote Premium:';
+        packageColor = '#ef4444';
+    }
+
+    const packageRow = document.getElementById('rev-sum-package-row');
+    const packageLabel = document.getElementById('rev-sum-package-label');
+    const packageCost = document.getElementById('rev-sum-package-cost');
+
+    if (packageRow) {
+        if (selectedPackageName !== 'fabrica') {
+            packageRow.style.display = 'flex';
+            if (packageLabel) packageLabel.innerText = adjustmentLabel;
+            if (packageCost) {
+                packageCost.innerText = '+' + formatCurrency(adjustmentAmount);
+                packageCost.style.color = packageColor;
+            }
+        } else {
+            packageRow.style.display = 'none';
+        }
+    }
+
+    document.getElementById('rev-sum-parts-cost').innerText = formatCurrency(subtotalPecas);
+    document.getElementById('rev-sum-mo-cost').innerText = formatCurrency(moSubtotal);
+    document.getElementById('rev-sum-total-cost').innerText = formatCurrency(finalPrice);
+
+    // Re-renderizar ícones Lucide para garantir que o ícone do botão seja desenhado
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+
+// ==========================================
+// 4. TABELA GERAL (ABA 3)
+// ==========================================
+function initTabelaGeral() {
+    const searchInput = document.getElementById('tabela-geral-search-input');
+
+    renderTabelaGeral();
+
+    searchInput.addEventListener('input', (e) => {
+        renderTabelaGeral(e.target.value);
+    });
+}
+
+function renderTabelaGeral(filterText = '') {
+    const tbody = document.getElementById('tabela-geral-body');
+    tbody.innerHTML = '';
+
+    const carNames = Object.keys(fiatData.modelos)
+        .filter(name => name.toLowerCase() !== '500e')
+        .sort(compareCarNames);
+
+    carNames.forEach(name => {
+        if (filterText && !name.toLowerCase().includes(filterText.toLowerCase())) {
+            return;
+        }
+
+        const car = fiatData.modelos[name];
+        const tr = document.createElement('tr');
+        tr.className = 'highlight-row';
+
+        let revCells = '';
+        let totalAcumulado10 = 0;
+
+        for (let i = 0; i < 10; i++) {
+            const cost = car.custos_totais[i];
+            if (cost !== undefined) {
+                revCells += `<td class="text-right">${formatCurrency(cost)}</td>`;
+                totalAcumulado10 += cost;
+            } else {
+                revCells += `<td class="text-right" style="color: var(--text-muted);">-</td>`;
+            }
+        }
+
+        tr.innerHTML = `
+            <td class="item-name-cell" style="font-weight: 600;">${name}</td>
+            ${revCells}
+            <td class="text-right td-total-highlight" style="color: var(--accent-red); font-weight: 700;">${formatCurrency(totalAcumulado10)}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// ==========================================
+// 5. TROCA DE ÓLEO (ABA 4 - MANTIDA IDÊNTICA)
+// ==========================================
+function initTrocaOleo() {
+    const searchInput = document.getElementById('oil-model-search');
+    const rootListContainer = document.getElementById('oil-root-list-container');
+    const listContainer = document.getElementById('oil-vehicle-list-container');
+
+    const carNames = Object.keys(fiatData.modelos)
+        .filter(name => name.toLowerCase() !== '500e' && name.toLowerCase() !== 'e-scudo')
+        .sort(compareCarNames);
+
+    const rootGroups = {};
+    carNames.forEach((name) => {
+        const root = getRootModel(name);
+        if (!rootGroups[root]) {
+            rootGroups[root] = [];
+        }
+        rootGroups[root].push(name);
+    });
+
+    const rootModelsList = Object.keys(rootGroups).sort();
+
+    function renderRootList(filterText = '') {
+        rootListContainer.innerHTML = '';
+        const filteredRoots = rootModelsList.filter(root =>
+            root.toLowerCase().includes(filterText.toLowerCase())
+        );
+
+        filteredRoots.forEach((root) => {
+            const btn = document.createElement('button');
+            btn.className = 'root-model-btn';
+            if (selectedRootModel === root) {
+                btn.classList.add('active');
+            }
+            btn.innerHTML = `<span>${root}</span>`;
+
+            btn.addEventListener('click', () => {
+                rootListContainer.querySelectorAll('.root-model-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedRootModel = root;
+                renderVersionList();
+            });
+
+            rootListContainer.appendChild(btn);
+        });
+    }
+
+    function renderVersionList() {
+        listContainer.innerHTML = '';
+
+        if (!selectedRootModel) return;
+
+        const versions = rootGroups[selectedRootModel] || [];
+
+        versions.forEach((name) => {
+            const btn = document.createElement('button');
+            btn.className = 'model-item-btn oil-model-btn';
+            if (currentOilCar && currentOilCar.modelo === name) {
+                btn.classList.add('active');
+            }
+
+            const parsed = parseVersionName(name);
+            const subtitleHtml = parsed.subtitle ? `<span class="version-subtitle">${parsed.subtitle}</span>` : '';
+            btn.innerHTML = `
+                <div class="version-info">
+                    <span class="version-title">${parsed.title}</span>
+                    ${subtitleHtml}
+                </div>
+                <i data-lucide="chevron-right" class="chevron"></i>
+            `;
+
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.oil-model-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectOilCar(name);
+            });
+            listContainer.appendChild(btn);
+        });
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    searchInput.addEventListener('input', (e) => {
+        renderRootList(e.target.value);
+    });
+
+    if (rootModelsList.length > 0) {
+        selectedRootModel = rootModelsList.includes("TORO") ? "TORO" : rootModelsList[0];
+        renderRootList();
+        renderVersionList();
+    }
+}
+
+function selectOilCar(carName) {
     try {
-        // Busca todos os veículos
-        const snapshot = await db.collection('veiculos').get();
-        managerVehiclesList = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        currentOilCar = fiatData.modelos[carName];
 
-        // Calcula Métricas de KPI
-        const totalVehicles = managerVehiclesList.length;
-        const totalRevisions = managerVehiclesList.reduce((acc, v) => acc + (v.marcacoes ? v.marcacoes.length : 0), 0);
+        let defaultHours = 0.15;
+        const nameLower = carName.toLowerCase();
+        if (nameLower.includes('titano') ||
+            nameLower.includes('scudo') ||
+            nameLower.includes('toro') ||
+            nameLower.includes('ducato')) {
+            defaultHours = 0.30;
+        }
 
-        // Concessionária Líder
-        const concCounts = {};
-        managerVehiclesList.forEach(v => {
-            const conc = (v.concessionaria || 'Não informada').trim();
-            if (conc) {
-                concCounts[conc] = (concCounts[conc] || 0) + 1;
+        document.getElementById('oil-car-name').innerText = currentOilCar.modelo;
+
+        const welcomeCover = document.getElementById('oil-welcome-cover');
+        const combustionContainer = document.getElementById('oil-combustion-container');
+        const electricAlert = document.getElementById('oil-electric-alert');
+
+        if (welcomeCover) welcomeCover.style.display = 'none';
+
+        const isElectric = carName.toLowerCase() === '500e' || carName.toLowerCase() === 'e-scudo';
+        if (isElectric) {
+            combustionContainer.style.display = 'none';
+            electricAlert.style.display = 'block';
+            electricAlert.classList.remove('hidden');
+
+            const pElem = electricAlert.querySelector('p');
+            if (pElem) {
+                pElem.innerHTML = `
+                    O <strong>${currentOilCar.modelo}</strong> utiliza propulsão 100% elétrica. Por não possuir motor a combustão interna, ele <strong>não necessita de óleo lubrificante de motor</strong> nem filtro de óleo, resultando em um custo de <strong>R$ 0,00</strong> para este serviço.
+                `;
+            }
+
+            document.getElementById('oil-total-price').innerText = 'R$ 0,00';
+            return;
+        }
+
+        combustionContainer.style.display = 'block';
+        combustionContainer.classList.remove('hidden');
+        electricAlert.style.display = 'none';
+
+        const partsTableBody = document.getElementById('oil-parts-table-body');
+        partsTableBody.innerHTML = '';
+
+        const firstRevName = currentOilCar.revisoes[0];
+
+        let subtotalPecas = 0;
+        let moHoras = 0;
+        let moPrecoHora = 0;
+        let moSubtotal = 0;
+        let indexItem = 0;
+
+        currentOilCar.itens.forEach(item => {
+            const qty = item.trocas[firstRevName];
+            const custo = item.custos[firstRevName];
+
+            if (item.tipo === 'serviço' && qty !== undefined && qty > 0) {
+                moHoras = defaultHours;
+                moPrecoHora = parseFloat(item.preco_unitario) || 0;
+                moSubtotal = moHoras * moPrecoHora;
+            }
+
+            const nameLower = item.nome.toLowerCase();
+
+            const isFiltroOleo = item.tipo === 'peça' &&
+                (nameLower.includes('filtro de óleo') ||
+                    nameLower.includes('filtro óleo') ||
+                    nameLower.includes('filtro de oleo') ||
+                    nameLower.includes('filtro oleo') ||
+                    nameLower.includes('filtrante do filtro óleo') ||
+                    nameLower.includes('filtrante do óleo') ||
+                    nameLower.includes('filtrante de óleo') ||
+                    nameLower.includes('filtrante de oleo') ||
+                    nameLower.includes('filtrante do filtro oleo') ||
+                    nameLower.includes('filtrante do oleo'));
+
+            const isOleoMotor = item.tipo === 'peça' &&
+                (nameLower.includes('mopar maxpro') ||
+                    nameLower.includes('oleo motor') ||
+                    nameLower.includes('óleo motor') ||
+                    nameLower.includes('selenia') ||
+                    nameLower.includes('ineo') ||
+                    nameLower.includes('0w20') ||
+                    nameLower.includes('5w30') ||
+                    nameLower.includes('0w30')) &&
+                !(nameLower.includes('cambio') ||
+                    nameLower.includes('câmbio') ||
+                    nameLower.includes('diferencial') ||
+                    nameLower.includes('freio') ||
+                    nameLower.includes('caixa') ||
+                    nameLower.includes('transferência') ||
+                    nameLower.includes('direção'));
+
+            if (isFiltroOleo || isOleoMotor) {
+                const itemQty = (qty !== undefined && qty > 0) ? qty : 1;
+                const precoUnit = parseFloat(item.preco_unitario) || 0;
+                const totalItem = (custo !== undefined && qty !== undefined && qty > 0) ? parseFloat(custo) : (itemQty * precoUnit);
+
+                subtotalPecas += totalItem;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="item-name-cell" data-label="Componente">${item.nome}</td>
+                    <td data-label="Código (PN)"><span class="item-pn">${item.pn}</span></td>
+                    <td class="text-right" data-label="Preço Unit.">${formatCurrency(precoUnit)}</td>
+                    <td class="text-right td-highlight" data-label="QTD">${itemQty}</td>
+                    <td class="text-right td-highlight" data-label="Subtotal">${formatCurrency(totalItem)}</td>
+                `;
+                partsTableBody.appendChild(tr);
+                indexItem++;
             }
         });
 
-        let topConc = 'Nenhuma';
-        let maxCount = 0;
-        for (const [conc, count] of Object.entries(concCounts)) {
-            if (count > maxCount) {
-                maxCount = count;
-                topConc = conc;
-            }
-        }
-
-        // Consultor Líder
-        const consultorCounts = {};
-        managerVehiclesList.forEach(v => {
-            const consultor = (v.consultor || '').trim();
-            if (consultor && consultor !== 'Não informado') {
-                consultorCounts[consultor] = (consultorCounts[consultor] || 0) + 1;
-            }
-        });
-
-        let topConsultor = 'Nenhum';
-        let maxConsultorCount = 0;
-        for (const [consultor, count] of Object.entries(consultorCounts)) {
-            if (count > maxConsultorCount) {
-                maxConsultorCount = count;
-                topConsultor = consultor;
-            }
-        }
-
-        // Atualiza elementos na tela
-        if (elements.kpiTotalVehicles) elements.kpiTotalVehicles.textContent = totalVehicles;
-        if (elements.kpiTotalRevisions) elements.kpiTotalRevisions.textContent = totalRevisions;
-        if (elements.kpiTopConcessionaria) {
-            elements.kpiTopConcessionaria.textContent = topConc;
-            elements.kpiTopConcessionaria.title = topConc;
-        }
-        if (elements.kpiTopConsultor) {
-            elements.kpiTopConsultor.textContent = topConsultor;
-            elements.kpiTopConsultor.title = topConsultor;
-        }
-
-        // Renderiza a tabela
-        renderManagerDashboardTable(managerVehiclesList);
-
-    } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
-        showToast("Erro ao carregar dados do gestor.", "error");
-        if (elements.managerTableBody) {
-            elements.managerTableBody.innerHTML = `
+        if (indexItem === 0) {
+            partsTableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 20px; color: var(--brand-red);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 10px; display: block;"></i>
-                        Erro ao carregar os dados do Firebase.
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Nenhum componente de óleo ou filtro identificado para este modelo.
                     </td>
                 </tr>
             `;
         }
-    }
-}
 
-function renderManagerDashboardTable(vehicles) {
-    if (!elements.managerTableBody) return;
-    elements.managerTableBody.innerHTML = '';
-    currentFilteredVehiclesList = vehicles;
-
-    if (vehicles.length === 0) {
-        if (elements.managerTableEmpty) elements.managerTableEmpty.style.display = 'flex';
-        return;
-    }
-
-    if (elements.managerTableEmpty) elements.managerTableEmpty.style.display = 'none';
-
-    vehicles.forEach(vehicle => {
-        const tr = document.createElement('tr');
-
-        const placaCell = document.createElement('td');
-        placaCell.style.fontWeight = '700';
-        placaCell.textContent = vehicle.placa || '-';
-
-        const chassiCell = document.createElement('td');
-        chassiCell.textContent = vehicle.chassi || '-';
-
-        const concessionariaCell = document.createElement('td');
-        concessionariaCell.textContent = vehicle.concessionaria || '-';
-
-        const consultorCell = document.createElement('td');
-        consultorCell.textContent = vehicle.consultor || '-';
-
-        const revisoesCell = document.createElement('td');
-        revisoesCell.style.textAlign = 'center';
-        const numMarcacoes = vehicle.marcacoes ? vehicle.marcacoes.length : 0;
-        revisoesCell.innerHTML = `<span class="badge-table-revisions">${numMarcacoes} / 10</span>`;
-
-        const actionsCell = document.createElement('td');
-        actionsCell.style.textAlign = 'center';
-        
-        const viewBtn = document.createElement('button');
-        viewBtn.className = 'btn-table-action';
-        viewBtn.innerHTML = '<i class="fas fa-eye"></i> Ver no Tabuleiro';
-        viewBtn.addEventListener('click', () => {
-            // Carrega veículo no app principal
-            currentVehicle = vehicle;
-            displayVehicleData(vehicle);
-            updateRoadVisuals(vehicle);
-            hideModal(elements.managerModal);
-            showToast(`Veículo ${vehicle.placa} carregado!`, "success");
-        });
-
-        actionsCell.appendChild(viewBtn);
-
-        tr.appendChild(placaCell);
-        tr.appendChild(chassiCell);
-        tr.appendChild(concessionariaCell);
-        tr.appendChild(consultorCell);
-        tr.appendChild(revisoesCell);
-        tr.appendChild(actionsCell);
-
-        elements.managerTableBody.appendChild(tr);
-    });
-}
-
-function filterManagerDashboardTable() {
-    const valPlaca = elements.filterPlaca ? elements.filterPlaca.value.trim().toUpperCase() : '';
-    const valChassi = elements.filterChassi ? elements.filterChassi.value.trim().toUpperCase() : '';
-    const valConc = elements.filterConcessionaria ? elements.filterConcessionaria.value.trim().toUpperCase() : '';
-    const valConsultor = elements.filterConsultor ? elements.filterConsultor.value.trim().toUpperCase() : '';
-
-    const filtered = managerVehiclesList.filter(v => {
-        const matchPlaca = !valPlaca || (v.placa && v.placa.toUpperCase().includes(valPlaca));
-        const matchChassi = !valChassi || (v.chassi && v.chassi.toUpperCase().includes(valChassi));
-        const matchConc = !valConc || (v.concessionaria && v.concessionaria.toUpperCase().includes(valConc));
-        const matchConsultor = !valConsultor || (v.consultor && v.consultor.toUpperCase().includes(valConsultor));
-        return matchPlaca && matchChassi && matchConc && matchConsultor;
-    });
-
-    renderManagerDashboardTable(filtered);
-}
-
-function exportManagerDataToExcel() {
-    if (!currentFilteredVehiclesList || currentFilteredVehiclesList.length === 0) {
-        showToast("Não há dados disponíveis para exportar.", "error");
-        return;
-    }
-
-    // Cria os cabeçalhos
-    const headers = [
-        "Placa",
-        "Chassi",
-        "Concessionária Vendedora",
-        "Consultor",
-        "Revisões Realizadas",
-        "Data de Cadastro"
-    ];
-
-    // Mapeia os dados dos veículos para linhas CSV
-    const rows = currentFilteredVehiclesList.map(vehicle => {
-        const numMarcacoes = vehicle.marcacoes ? vehicle.marcacoes.length : 0;
-        
-        let dateStr = "-";
-        if (vehicle.created_at) {
-            const date = (vehicle.created_at.toDate) ? vehicle.created_at.toDate() : new Date(vehicle.created_at);
-            dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+        if (moSubtotal === 0) {
+            moHoras = defaultHours;
+            moPrecoHora = 349.0;
+            moSubtotal = moHoras * moPrecoHora;
         }
 
-        return [
-            vehicle.placa || "-",
-            vehicle.chassi || "-",
-            vehicle.concessionaria || "-",
-            vehicle.consultor || "-",
-            `${numMarcacoes} / 10`,
-            dateStr
-        ].map(val => `"${val.replace(/"/g, '""')}"`).join(";"); // Utiliza ponto e vírgula como separador para compatibilidade direta com Excel BR
-    });
+        const custoTotalTroca = subtotalPecas + moSubtotal;
 
-    // Concatena cabeçalho e linhas
-    const csvContent = "\ufeff" + [headers.join(";"), ...rows].join("\n"); // Adiciona o BOM do UTF-8 para exibir acentuação corretamente no Excel
+        document.getElementById('oil-mo-hours').innerText = `${moHoras.toFixed(2)}h`;
+        document.getElementById('oil-mo-rate').innerText = formatCurrency(moPrecoHora);
+        document.getElementById('oil-mo-subtotal').innerText = formatCurrency(moSubtotal);
 
-    // Cria o Blob e baixa o arquivo
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    
-    const hoje = new Date();
-    const dataFormatada = hoje.getFullYear() + 
-                         "-" + String(hoje.getMonth() + 1).padStart(2, '0') + 
-                         "-" + String(hoje.getDate()).padStart(2, '0') + 
-                         "_" + String(hoje.getHours()).padStart(2, '0') + 
-                         String(hoje.getMinutes()).padStart(2, '0');
-                         
-    const filename = `relatorio_fidelidade_gestor_${dataFormatada}.csv`;
-
-    if (navigator.msSaveBlob) { // IE 10+
-        navigator.msSaveBlob(blob, filename);
-    } else {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        document.getElementById('oil-sum-parts-cost').innerText = formatCurrency(subtotalPecas);
+        document.getElementById('oil-sum-mo-cost').innerText = formatCurrency(moSubtotal);
+        document.getElementById('oil-sum-total-cost').innerText = formatCurrency(custoTotalTroca);
+        document.getElementById('oil-total-price').innerText = formatCurrency(custoTotalTroca);
+    } catch (err) {
+        console.error("Erro ao selecionar o veículo para óleo:", err);
+        alert("Erro ao selecionar o veículo: " + err.message);
     }
-
-    showToast("Dados exportados com sucesso!", "success");
 }

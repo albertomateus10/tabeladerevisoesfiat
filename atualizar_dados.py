@@ -24,6 +24,10 @@ mapeamento_nomes = {
     "TITANO 2.2D MT": "TITANO 2.2D MT (Nova/8AP)",
     "TITANO AUTOMÁTICO": "TITANO 2.2D AT (Antiga/9VC)",
     "TITANO MANUAL": "TITANO 2.2D MT (Antiga/9VC)",
+    "TITANO DS 2.2D MT MY26": "TITANO DS 2.2D MT MY26/Nova/8AP",
+    "TITANO DS 2.2D AT MY26": "TITANO DS 2.2D AT MY26/Nova/8AP",
+    "TITANO DS 2.2D MT MY27": "TITANO DS 2.2D MT MY27/Nova/8AP",
+    "TITANO DS 2.2D AT MY27": "TITANO DS 2.2D AT MY27/Nova/8AP",
     "SCUDO": "SCUDO 1.5 (Antiga)",
     "SCUDO 2.2D": "SCUDO 2.2 (Nova)",
     "FIORINO 1.4 (21/22)": "FIORINO 1.4 (2021/2022 para cima)"

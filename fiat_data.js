@@ -15820,8 +15820,8 @@ window.fiatData = {
         }
       ]
     },
-    "TITANO DS 2.2D MT MY26": {
-      "modelo": "TITANO DS 2.2D MT MY26",
+    "TITANO DS 2.2D MT MY26/Nova/8AP": {
+      "modelo": "TITANO DS 2.2D MT MY26/Nova/8AP",
       "revisoes": [
         "1a",
         "2a",
@@ -16216,8 +16216,8 @@ window.fiatData = {
         }
       ]
     },
-    "TITANO DS 2.2D AT MY26": {
-      "modelo": "TITANO DS 2.2D AT MY26",
+    "TITANO DS 2.2D AT MY26/Nova/8AP": {
+      "modelo": "TITANO DS 2.2D AT MY26/Nova/8AP",
       "revisoes": [
         "1a",
         "2a",
@@ -16586,8 +16586,8 @@ window.fiatData = {
         }
       ]
     },
-    "TITANO DS 2.2D MT MY27": {
-      "modelo": "TITANO DS 2.2D MT MY27",
+    "TITANO DS 2.2D MT MY27/Nova/8AP": {
+      "modelo": "TITANO DS 2.2D MT MY27/Nova/8AP",
       "revisoes": [
         "1a",
         "2a",
@@ -17062,8 +17062,8 @@ window.fiatData = {
         }
       ]
     },
-    "TITANO DS 2.2D AT MY27": {
-      "modelo": "TITANO DS 2.2D AT MY27",
+    "TITANO DS 2.2D AT MY27/Nova/8AP": {
+      "modelo": "TITANO DS 2.2D AT MY27/Nova/8AP",
       "revisoes": [
         "1a",
         "2a",

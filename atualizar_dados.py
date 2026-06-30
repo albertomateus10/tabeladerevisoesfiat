@@ -126,8 +126,12 @@ else:
 
 data["precos_nacionais"] = precos_nacionais
 
+# Se a primeira aba não for resumo, processamos todas as abas (incluindo a primeira).
+# Caso contrário, processamos a partir da segunda aba.
+abas_veiculos = sheet_names_marco[1:] if header_row_idx is not None else sheet_names_marco
+
 # 2. Processar cada aba de veículo individual (incluindo abas com múltiplos blocos)
-for sheet_name in sheet_names_marco[1:]:
+for sheet_name in abas_veiculos:
     if sheet_name in wb_junho.sheetnames:
         sheet = wb_junho[sheet_name]
         origem = "Junho"

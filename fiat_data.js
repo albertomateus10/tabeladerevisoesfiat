@@ -10242,7 +10242,7 @@ window.fiatData = {
           }
         },
         {
-          "nome": "Óleo do motor",
+          "nome": "Óleo do motor - MOPAR MAXPRO SYNTHETIC 0W20",
           "pn": "7092778",
           "preco_unitario": 94.1269314478343,
           "tipo": "peça",

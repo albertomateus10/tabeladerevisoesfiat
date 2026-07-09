@@ -823,6 +823,8 @@ function selectOilCar(carName) {
                 (nameLower.includes('mopar maxpro') ||
                     nameLower.includes('oleo motor') ||
                     nameLower.includes('óleo motor') ||
+                    nameLower.includes('oleo do motor') ||
+                    nameLower.includes('óleo do motor') ||
                     nameLower.includes('selenia') ||
                     nameLower.includes('ineo') ||
                     nameLower.includes('0w20') ||

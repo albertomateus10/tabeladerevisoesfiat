@@ -204,7 +204,7 @@ function parseVersionName(fullName) {
 // 1. GERENCIADOR DE ABAS
 // ==========================================
 function initTabs() {
-    const tabs = document.querySelectorAll('.nav-tab');
+    const tabs = document.querySelectorAll('.nav-tab[data-tab]');
     const contents = document.querySelectorAll('.tab-content');
 
     tabs.forEach(tab => {

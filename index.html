@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revisões e Troca de Óleo</title>
+    <!-- CSS Customizado -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons para ícones modernos -->
+    <script src="lucide.min.js"></script>
+    <!-- Chart.js para gráficos elegantes -->
+    <script src="chart.umd.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Header Superior com Abas de Navegação -->
+        <header>
+            <div class="brand-section">
+                <a href="https://github.com/albertomateus10/tabeladerevisoesfiat/raw/refs/heads/main/Tabela%20Revis%C3%A3o%20Programada%20FIAT%20Junho%202026.xlsx"
+                    target="_blank" rel="noopener noreferrer" class="brand-logo-link">
+                    <img src="logo.png" alt="San Marino" class="brand-logo-img">
+                </a>
+                <span class="brand-developed">Desenvolvido por <strong>Alberto Mateus</strong></span>
+            </div>
+            <div class="header-controls">
+                <a href="temposdoscarros.png" target="_blank" class="btn-garantia">
+                    <i data-lucide="image"></i>
+                    Garantia dos Veículos
+                </a>
+
+                <a href="https://albertomateus10.github.io/temposdegarantia/" target="_blank" class="btn-garantia">
+                    <i data-lucide="shield-check"></i>
+                    Garantia das Peças
+                </a>
+
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-tab="tab-revisoes">
+                        <i data-lucide="wrench"></i>
+                        Revisões
+                    </button>
+
+                    <button class="nav-tab" data-tab="tab-troca-oleo">
+                        <i data-lucide="droplet"></i>
+                        Troca de Óleo
+                    </button>
+                </div>
+                <div class="date-counter-container">
+                    <div id="current-date-display"
+                        style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; font-family: 'Outfit', sans-serif;">
+                        <!-- Injetado via JS -->
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Loader Principal (exibido enquanto o JSON carrega) -->
+        <div id="main-loader" class="loader-container">
+            <div class="loader"></div>
+            <h2
+                style="color: var(--text-primary); font-family: 'Outfit', sans-serif; font-weight: 700; margin-top: 0.5rem; font-size: 1.25rem;">
+                Pós-Venda Fiat</h2>
+            <p
+                style="color: var(--text-secondary); font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 0.95rem; margin-top: -0.25rem;">
+                Carregando dados das revisões Fiat...</p>
+        </div>
+
+        <!-- Conteúdo Principal (inicialmente oculto até carregar o JSON) -->
+        <main id="main-content" class="hidden">
+
+            <!-- ABA REVISÕES PROGRAMADAS -->
+            <section id="tab-revisoes" class="tab-content fade-in">
+                <div class="dashboard-layout">
+                    <!-- Sidebar de Modelos Raiz -->
+                    <aside class="sidebar sidebar-root">
+                        <div class="search-container" style="margin-bottom: 0.75rem;">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="rev-model-search" class="search-input" placeholder="Buscar modelo">
+                        </div>
+                        <div class="model-list" id="rev-root-list-container">
+                            <!-- Os botões dos modelos raiz serão injetados via JS -->
+                        </div>
+                    </aside>
+
+                    <!-- Sidebar de Seleção de Carros -->
+                    <aside class="sidebar">
+                        <h3 class="model-list-title" id="rev-sub-list-title">Versões</h3>
+                        <div class="model-list" id="rev-vehicle-list-container">
+                            <!-- Os botões dos veículos serão injetados via JS -->
+                        </div>
+                    </aside>
+
+                    <!-- Área de Visualização do Veículo Selecionado -->
+                    <div class="content-area">
+                        <!-- Tela de Boas-Vindas (Capa) -->
+                        <div id="rev-welcome-cover" class="welcome-cover">
+                            <i data-lucide="wrench"
+                                style="width: 48px; height: 48px; margin-bottom: 1rem; color: var(--accent-red);"></i>
+                            <h2>Tabela de Revisão Programada</h2>
+                            <p>Selecione um modelo e uma versão nas colunas à esquerda para visualizar os planos de
+                                revisão programada, custos e peças.</p>
+                        </div>
+
+                        <!-- Bloco de Conteúdo da Revisão Selecionada (Inicialmente Oculto) -->
+                        <div id="rev-data-container" style="display: none;">
+                            <!-- Card Principal com Título e Preço -->
+                            <div class="premium-card">
+                                <div class="car-header">
+                                    <div class="car-title-group">
+                                        <h2 id="rev-car-name">SELECIONE UM MODELO</h2>
+                                    </div>
+                                    <div class="price-boxes-container">
+                                        <!-- Box PREMIUM (Vermelho) -->
+                                        <div class="price-display-box package-box premium-box" id="box-premium"
+                                            onclick="selectPackage('premium')">
+                                            <span class="price-label">Premium</span>
+                                            <span class="price-value" id="price-premium">R$ 0,00</span>
+                                        </div>
+
+                                        <!-- Box INTERMEDIÁRIO (Verde) -->
+                                        <div class="price-display-box package-box intermediario-box"
+                                            id="box-intermediario" onclick="selectPackage('intermediario')">
+                                            <span class="price-label">Intermediário</span>
+                                            <span class="price-value" id="price-intermediario">R$ 0,00</span>
+                                        </div>
+
+                                        <!-- Box BÁSICO (Cinza) -->
+                                        <div class="price-display-box package-box basico-box" id="box-basico"
+                                            onclick="selectPackage('basico')">
+                                            <span class="price-label">Básico</span>
+                                            <span class="price-value" id="price-basico">R$ 0,00</span>
+                                        </div>
+
+                                        <!-- Box FÁBRICA (Ativo por Padrão) -->
+                                        <div class="price-display-box package-box fabrica-box active-package"
+                                            id="box-fabrica" onclick="selectPackage('fabrica')">
+                                            <span class="price-label">Fábrica</span>
+                                            <span class="price-value" id="rev-total-price">R$ 0,00</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Seletor de Quilometragens/Revisões -->
+                                <div class="km-selector-wrapper">
+                                    <div class="km-grid" id="rev-km-grid">
+                                        <!-- Botões de KM injetados via JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Detalhamento de Peças e Custos -->
+                            <div class="details-grid">
+                                <!-- Tabela de Peças e Componentes -->
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <h3 class="section-title">
+                                            <i data-lucide="package"></i> Componentes Substituídos
+                                        </h3>
+                                        <span class="section-count-badge" id="rev-parts-count">0 itens</span>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Componente</th>
+                                                    <th>Código</th>
+                                                    <th class="text-right">Unitário</th>
+                                                    <th class="text-right">QTD</th>
+                                                    <th class="text-right">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="rev-parts-table-body">
+                                                <!-- Inserido via JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Tabela de Mão de Obra e Consolidação -->
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <h3 class="section-title">
+                                            <i data-lucide="wrench"></i> Mão de Obra e Resumo
+                                        </h3>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                                        <div class="table-responsive" style="margin-bottom: 1rem;">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Serviço</th>
+                                                        <th class="text-right">Horas</th>
+                                                        <th class="text-right">Preço/h</th>
+                                                        <th class="text-right">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="item-name-cell" data-label="Serviço">Mão de Obra de
+                                                            Revisão</td>
+                                                        <td class="text-right td-highlight" id="rev-mo-hours"
+                                                            data-label="Horas">0.0h</td>
+                                                        <td class="text-right" id="rev-mo-rate" data-label="Preço/h">R$
+                                                            0,00</td>
+                                                        <td class="text-right td-highlight" id="rev-mo-subtotal"
+                                                            data-label="Subtotal">R$ 0,00</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <h4
+                                            style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--card-border); padding-top: 1.25rem;">
+                                            Valores Consolidados</h4>
+                                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                                            <div class="revisao-summary-row">
+                                                <span>Total em Peças:</span>
+                                                <span id="rev-sum-parts-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Total em Mão de Obra:</span>
+                                                <span id="rev-sum-mo-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row" id="rev-sum-package-row"
+                                                style="display: none;">
+                                                <span id="rev-sum-package-label">Pacote Especial:</span>
+                                                <span id="rev-sum-package-cost" class="td-highlight">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Preço Total Estimado:</span>
+                                                <span class="td-total-highlight" id="rev-sum-total-cost"
+                                                    style="color: var(--text-primary);">R$ 0,00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ABA TABELA GERAL -->
+            <section id="tab-tabela-geral" class="tab-content fade-in hidden">
+                <div class="tabela-geral-layout">
+                    <div class="tabela-geral-card">
+                        <div class="tabela-geral-controls">
+                            <div>
+                                <h2>Tabela Geral de Valores de Revisão</h2>
+                                <p style="color: var(--text-secondary);">Custos das revisões programadas de todos os
+                                    modelos Fiat (valores em Reais)</p>
+                            </div>
+                            <div class="tabela-geral-search">
+                                <div class="search-container" style="margin-bottom: 0;">
+                                    <i data-lucide="search" class="search-icon"></i>
+                                    <input type="text" id="tabela-geral-search-input" class="search-input"
+                                        placeholder="Buscar modelo na tabela geral...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive tabela-geral-wrapper" style="margin-top: 1.5rem;">
+                            <table id="table-geral-dados">
+                                <thead>
+                                    <tr>
+                                        <th>Modelo</th>
+                                        <th class="text-right">1ª Rev (10k)</th>
+                                        <th class="text-right">2ª Rev (20k)</th>
+                                        <th class="text-right">3ª Rev (30k)</th>
+                                        <th class="text-right">4ª Rev (40k)</th>
+                                        <th class="text-right">5ª Rev (50k)</th>
+                                        <th class="text-right">6ª Rev (60k)</th>
+                                        <th class="text-right">7ª Rev (70k)</th>
+                                        <th class="text-right">8ª Rev (80k)</th>
+                                        <th class="text-right">9ª Rev (90k)</th>
+                                        <th class="text-right">10ª Rev (100k)</th>
+                                        <th class="text-right" style="color: var(--accent-red); font-weight: 700;">Total
+                                            (100k km)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-geral-body">
+                                    <!-- Injetado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA TROCA DE ÓLEO (MANTIDA IDÊNTICA) -->
+            <section id="tab-troca-oleo" class="tab-content fade-in hidden">
+                <div class="dashboard-layout">
+                    <!-- Sidebar de Modelos Raiz -->
+                    <aside class="sidebar sidebar-root">
+                        <div class="search-container" style="margin-bottom: 0.75rem;">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="oil-model-search" class="search-input" placeholder="Buscar modelo">
+                        </div>
+                        <div class="model-list" id="oil-root-list-container">
+                            <!-- Os botões dos modelos raiz (ex: TORO, CRONOS) serão injetados via JS -->
+                        </div>
+                    </aside>
+
+                    <!-- Sidebar de Seleção de Carros -->
+                    <aside class="sidebar">
+                        <h3 class="model-list-title" id="oil-sub-list-title">Versões</h3>
+                        <div class="model-list" id="oil-vehicle-list-container">
+                            <!-- Os botões dos veículos serão injetados dinamicamente via JS -->
+                        </div>
+                    </aside>
+
+                    <!-- Área de Visualização do Veículo Selecionado -->
+                    <div class="content-area">
+                        <!-- Tela de Boas-Vindas (Capa) -->
+                        <div id="oil-welcome-cover" class="welcome-cover">
+                            <h2>Valores de Troca de Óleo</h2>
+                            <p>Selecione uma versão na coluna central para visualizar os valores de óleo e filtro,
+                                quantidade de óleo e tempo de mão de obra.</p>
+                        </div>
+
+                        <!-- Bloco para Veículos a Combustão (Inicialmente Oculto) -->
+                        <div id="oil-combustion-container" style="display: none;">
+                            <!-- Card com Informações Principais e Preço -->
+                            <div class="premium-card">
+                                <div class="car-header">
+                                    <div class="car-title-group">
+                                        <h2 id="oil-car-name">SELECIONE UM MODELO</h2>
+                                    </div>
+                                    <div class="price-display-box"
+                                        style="background: linear-gradient(135deg, rgba(255, 56, 56, 0.15) 0%, rgba(255, 56, 56, 0.05) 100%); border-color: rgba(255, 56, 56, 0.3);">
+                                        <span class="price-label"
+                                            style="color: var(--accent-red); font-weight: 600;">Total da Troca de
+                                            Óleo</span>
+                                        <span class="price-value" id="oil-total-price">R$ 0,00</span>
+                                        <span class="price-notes">Peças + Mão de obra inclusas</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detalhamento de Peças e Custos -->
+                            <div class="details-grid">
+                                <!-- Tabela de Componentes -->
+                                <div class="section-card">
+                                    <div class="table-responsive">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Componente</th>
+                                                    <th>Código</th>
+                                                    <th class="text-right">Unitário</th>
+                                                    <th class="text-right">QTD</th>
+                                                    <th class="text-right">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="oil-parts-table-body">
+                                                <!-- Inserido dinamicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Resumo Financeiro da Troca de Óleo -->
+                                <div class="section-card">
+                                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                                        <h4
+                                            style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Mão de Obra de Troca</h4>
+                                        <div class="table-responsive" style="margin-bottom: 1rem;">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Serviço</th>
+                                                        <th class="text-right">Horas</th>
+                                                        <th class="text-right">Preço/h</th>
+                                                        <th class="text-right">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="item-name-cell" data-label="Serviço">Mão de Obra
+                                                            Troca de Óleo</td>
+                                                        <td class="text-right td-highlight" id="oil-mo-hours"
+                                                            data-label="Horas">0.0h</td>
+                                                        <td class="text-right" id="oil-mo-rate" data-label="Preço/h">R$
+                                                            0,00</td>
+                                                        <td class="text-right td-highlight" id="oil-mo-subtotal"
+                                                            data-label="Subtotal">R$ 0,00</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <h4
+                                            style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--card-border); padding-top: 1.25rem;">
+                                            Valores Consolidados</h4>
+                                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                                            <div class="revisao-summary-row">
+                                                <span>Lubrificante & Filtro:</span>
+                                                <span id="oil-sum-parts-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Mão de Obra do Serviço:</span>
+                                                <span id="oil-sum-mo-cost">R$ 0,00</span>
+                                            </div>
+                                            <div class="revisao-summary-row">
+                                                <span>Preço Total Estimado:</span>
+                                                <span class="td-total-highlight" id="oil-sum-total-cost"
+                                                    style="color: var(--text-primary);">R$ 0,00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bloco para Veículo Elétrico (Fiat 500e - Inicialmente Oculto) -->
+                        <div id="oil-electric-alert" class="premium-card electric-alert" style="display: none;">
+                            <i data-lucide="zap"
+                                style="width: 48px; height: 48px; color: var(--info-color); margin-bottom: 1.5rem; stroke-width: 1.5; display: inline-block;"></i>
+                            <h3 style="font-size: 1.6rem; margin-bottom: 0.75rem; color: var(--text-primary);">Veículo
+                                100% Elétrico</h3>
+                            <p
+                                style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6; font-size: 1.05rem;">
+                                O <strong>Fiat 500e</strong> utiliza propulsão 100% elétrica. Por não possuir motor a
+                                combustão interna, ele <strong>não necessita de óleo lubrificante de motor</strong> nem
+                                filtro de óleo, resultando em um custo de <strong>R$ 0,00</strong> para este serviço.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+
+
+    </div>
+
+
+    </div>
+
+    <!-- Script JavaScript com os Dados -->
+    <script src="fiat_data.js"></script>
+    <!-- Script JavaScript Principal -->
+    <script src="app.js"></script>
+</body>
+
+</html>

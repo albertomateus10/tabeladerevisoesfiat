@@ -1,0 +1,2649 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Central de Apoio</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="login.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+  <!-- TELA DE LOGIN -->
+  <div id="login-screen" class="login-screen split-layout">
+    <div class="login-left-side">
+      <div class="side-image"
+        style="background-image: url('telanova2.png'); height: 115%; top: -10%; background-position: top center;"></div>
+    </div>
+
+    <div class="login-right-side">
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-logo">
+            <img src="logobranca.png" alt="Grupo San Marino">
+          </div>
+          <p class="login-welcome-text">Bem-vindo à Central de Apoio</p>
+          <p style="font-size: 12px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; line-height: 1.4;"></p>
+
+          <div class="login-auth-options">
+            <button id="google-login-btn" class="auth-btn google">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+              Entrar com Google
+            </button>
+          </div>
+
+          <div id="pending-approval" class="pending-approval hidden">
+            <div class="pending-icon">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div id="user-email-pending"
+              style="color: var(--accent); font-weight: bold; margin-bottom: 15px; font-size: 14px;"></div>
+            <h3>Aguardando Aprovação</h3>
+            <p>Seu acesso está sendo analisado pelo administrador do sistema.</p>
+            <button onclick="supabaseClient.auth.signOut()" class="btn-voltar">Sair</button>
+          </div>
+
+          <div class="login-footer" style="font-size: 13px; opacity: 0.8;">
+            <span>Desenvolvido por <strong>Alberto Mateus</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="app" style="display: none;">
+    <div id="toast-container"></div>
+    <div class="shell" id="shell">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="brand">
+
+          <div class="brand-title">
+            <img src="logonova.png" alt="Grupo San Marino" class="brand-logo-img">
+            <span>Desenvolvido por <strong>Alberto Mateus</strong></span>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <div class="user-greeting" id="user-greeting" style="display:none; cursor: pointer;" onclick="alternarSecao('home')" title="Voltar para o Início">
+            <i class="fa-solid fa-circle-user"></i>
+            <span id="user-greeting-name">Olá!</span>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="search-wrapper">
+            <div class="search-input-container" id="searchContainer">
+              <input type="text" id="globalSearchInput" placeholder="Localizar..." autocomplete="off">
+            </div>
+            <button class="icon-btn" id="btnSearch" title="Localizar (Ctrl+F)" aria-label="Localizar">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
+          </div>
+
+          <button class="icon-btn" id="btnHome" onclick="alternarSecao('home')" title="Início" aria-label="Início">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </button>
+
+          <div class="chip" title="Informações">
+            <small>Visitas:</small> <b id="visits-count">...</b>
+          </div>
+
+          <button class="icon-btn" id="btnComunicados" title="Mural de Comunicados" aria-label="Mural de Comunicados">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </button>
+
+          <button class="icon-btn" id="btnSidebar" title="Recolher/Expandir menu" aria-label="Recolher/Expandir menu">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h16M4 12h10M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="label"></div>
+        </div>
+
+        <nav class="nav" id="nav">
+          <!-- Grupo Modalidades de Venda -->
+          <div class="nav-group">
+
+
+            <a href="#cartas" id="btn-cartas" onclick="alternarSecao('cartas')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M2 20V4l8 4 8-4v16H2Z" stroke="currentColor" stroke-width="1.8" />
+                <path d="M6 10v2m4-2v2m4-2v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span>Zero KM</span>
+            </a>
+
+            <a href="#venda-direta" id="btn-venda-direta" onclick="alternarSecao('venda-direta')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16v10H4z" stroke="currentColor" stroke-width="1.8" />
+                <path d="M7 17h10M8 7l2 10m6-10-2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span>Venda Direta</span>
+            </a>
+
+            <a href="#seminovos" id="btn-seminovos" onclick="alternarSecao('seminovos')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 16.5l1.5-6h9L18 16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M7.5 10.5 9 7.5h6l1.5 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M7 16.5h10M8 18.5h2m4 0h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span>Seminovos</span>
+            </a>
+
+            <a href="#textos-contrato" id="btn-textos-contrato" onclick="alternarSecao('textos-contrato')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor"
+                  stroke-width="1.8" />
+                <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8" />
+                <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <polyline points="10 9 9 9 8 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span>Textos para Contrato</span>
+            </a>
+
+            <a href="#acessorios" id="btn-acessorios" onclick="alternarSecao('acessorios')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M10 13a5 5 0 0 1 0-7l1.2-1.2a5 5 0 0 1 7 7L17 13" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" />
+                <path d="M14 11a5 5 0 0 1 0 7L12.8 19.2a5 5 0 1 1-7-7L7 11" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" />
+              </svg>
+              <span>Catálogo de Acessórios</span>
+            </a>
+
+            <a href="#pos-vendas" id="btn-pos-vendas" onclick="alternarSecao('pos-vendas')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 14l6-6 4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M20 20H4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span>Pós Vendas</span>
+            </a>
+          </div>
+
+          <!-- Grupo Ferramentas -->
+          <div class="nav-group">
+
+
+            <a href="#calculadora" id="btn-calculadora" onclick="alternarSecao('calculadora')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor"
+                  stroke-width="1.8" />
+                <path d="M8 7h8M9 11h2m2 0h2M9 15h2m2 0h2" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" />
+              </svg>
+              <span>Calculadora <small
+                  style="font-size: 10px; color: var(--muted); font-weight: normal; margin-left: 4px; display: inline-block;">(juros
+                  do cartão)</small></span>
+            </a>
+
+
+            <a href="#gerador" class="active" id="btn-gerador" onclick="alternarSecao('gerador')">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M7 3h7l3 3v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor"
+                  stroke-width="1.8" />
+                <path d="M14 3v4h4" stroke="currentColor" stroke-width="1.8" />
+              </svg>
+              <span>Gerador de Documentos</span>
+            </a>
+          </div>
+
+          <a href="#bancos" id="btn-bancos" onclick="alternarSecao('bancos')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 10h16M6 10V19m4-9V19m4-9V19m4-9V19" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" />
+              <path d="M3.5 10 12 4l8.5 6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+            </svg>
+            <span>Links para os Bancos</span>
+          </a>
+
+          <a href="#certidoes" id="btn-certidoes" onclick="alternarSecao('certidoes')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M7 3h10a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z" stroke="currentColor"
+                stroke-width="1.8" />
+              <path d="M8 7h8M8 11h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <span>Emitir Certidões</span>
+          </a>
+
+
+
+
+
+          <a href="#plataformas" id="btn-plataformas" onclick="alternarSecao('plataformas')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="1.8" />
+              <path d="M4 11h3M17 11h3M11 4v3M11 17v3" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" />
+            </svg>
+            <span>Plataformas e Sistemas</span>
+          </a>
+
+          <a href="#rh" id="btn-rh" onclick="alternarSecao('rh')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            <span>RH / DP</span>
+          </a>
+
+          <a href="#links" id="btn-links" onclick="alternarSecao('links')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M10 13a5 5 0 0 1 0-7l1.2-1.2a5 5 0 0 1 7 7L17 13" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" />
+              <path d="M14 11a5 5 0 0 1 0 7L12.8 19.2a5 5 0 1 1-7-7L7 11" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" />
+            </svg>
+            <span>Links Úteis</span>
+          </a>
+
+          <a href="#lojas" id="btn-lojas" onclick="alternarSecao('lojas')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z" stroke="currentColor" stroke-width="1.8" />
+              <path d="M12 10.2a2.3 2.3 0 1 0 0 .01Z" stroke="currentColor" stroke-width="1.8" />
+            </svg>
+            <span>Localização das Lojas</span>
+          </a>
+
+          <a href="#san-marino-online" id="btn-online" onclick="alternarSecao('online')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8" />
+              <path
+                d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                stroke="currentColor" stroke-width="1.8" />
+            </svg>
+            <span>San Marino Online</span>
+          </a>
+
+          <a href="#gestor" id="btn-gestor" onclick="alternarSecao('gestor')">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Apoio para Gestores</span>
+          </a>
+        </nav>
+
+
+        <div class="sidebar-foot">
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main" id="main">
+        <div class="main-head">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h2 id="pageTitle">Gerador de Documentos</h2>
+            <button class="icon-btn fav-title-btn" id="btn-fav-global" title="Fixar como Página Inicial"
+              style="width: 28px; height: 28px; border-radius: 8px; font-size: 10px;">
+              <i class="fa-regular fa-star"></i>
+            </button>
+          </div>
+          <p id="page subtitle"></p>
+        </div>
+
+        <section class="grid-tiles">
+
+          <!-- Seção: HOME (Página Inicial) -->
+          <div class="cover col-12" id="secao-home">
+            <div class="home-hero">
+              <div class="home-logo-container">
+                <img src="logonova.png" alt="Grupo San Marino" class="home-logo-img">
+              </div>
+              <h2>Bem-vindo à Central de Apoio</h2>
+              <p
+                style="font-size: 13px; color: var(--muted); opacity: 0.7; margin-top: 4px; margin-bottom: 12px; line-height: 1.4; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Menos tempo procurando informações, mais tempo gerando resultados. A Central de Apoio garante acesso rápido a documentos e ferramentas em um único ambiente.</p>
+              <p id="home-msg">Selecione um módulo abaixo para começar ou favorite seu preferido para abrir
+                automaticamente na próxima vez.</p>
+            </div>
+
+            <!-- Grade Dinâmica: Será preenchida via JS apenas com os favoritos -->
+            <div class="home-grid" id="home-grid-dinamico"></div>
+          </div>
+
+          <!-- Seção: Gerador de Documentos (Submenu) -->
+          <div class="cover hidden col-12" id="secao-gerador" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <button class="cover-btn" id="btn-doc-recebimento" type="button"
+                onclick="abrirDocumento('doc-recebimento')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-recebimento')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">PROCURAÇÃO DE RECEBIMENTO DO USADO</div>
+              </button>
+              <button class="cover-btn" id="btn-doc-acordo" type="button" onclick="abrirDocumento('doc-acordo')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-acordo')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">PROCURAÇÃO DE ACORDO</div>
+              </button>
+              <button class="cover-btn" id="btn-doc-instrumento" type="button"
+                onclick="abrirDocumento('doc-instrumento')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-instrumento')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">INSTRUMENTO DE RESPONSABILIDADE</div>
+              </button>
+              <button class="cover-btn" id="btn-doc-quitacao" type="button" onclick="abrirDocumento('doc-quitacao')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-quitacao')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">TERMO DE QUITAÇÃO <span class="muted-text">(veículo de terceiros)</span>
+                </div>
+              </button>
+              <button class="cover-btn" id="btn-doc-residencia" type="button"
+                onclick="abrirDocumento('doc-residencia')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-residencia')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">DECLARAÇÃO DE RESIDÊNCIA</div>
+              </button>
+              <button class="cover-btn" id="btn-doc-deposito" type="button" onclick="abrirDocumento('doc-deposito')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-deposito')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">DECLARAÇÃO DE DEPÓSITO PARA TERCEIROS</div>
+              </button>
+              <button class="cover-btn" id="btn-doc-orcamento" type="button" onclick="abrirDocumento('doc-orcamento')">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-orcamento')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">ORÇAMENTO DE DETRAN</div>
+              </button>
+              <a href="https://albertomateus10.github.io/pdfsdomes/Termo_de_Responsabilidade_do_Test_Drive.xlsx"
+                target="_blank" class="cover-btn" id="btn-doc-test-drive" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-test-drive')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">Termo de Test Drive (Download)</div>
+              </a>
+              <a href="https://github.com/albertomateus10/pdfsdomes/raw/main/autorzacaoretiradaterceiros.doc"
+                download="autorzacaoretiradaterceiros.doc" class="cover-btn" id="btn-doc-retirada"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-doc-retirada')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">Autorização de retirada por Terceiros (Download)</div>
+              </a>
+            </div>
+
+            <!-- Dados do Cliente Global (MUDADO PARA DENTRO DO GERADOR) -->
+            <div class="doc-card hidden" id="dados-cliente-global" style="margin-top: 15px;">
+              <div class="section-title"
+                style="border-top: none; margin-top: 0; padding-top: 0; font-size: 15px; margin-bottom: 20px; color: #1e293b; font-weight: 800; text-align: center; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-user-pen"></i>&nbsp; DADOS DO CLIENTE (Preencha uma vez para todos os
+                documentos)
+              </div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="global_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="global_nomeCompleto" placeholder="NOME COMPLETO DO CLIENTE"
+                    oninput="replicarDadosCliente()">
+                </div>
+                <div class="form-item">
+                  <label for="global_cpfCnpj">CPF/CNPJ</label>
+                  <input type="text" id="global_cpfCnpj" placeholder="000.000.000-00" oninput="replicarDadosCliente()">
+                </div>
+                <div class="form-item">
+                  <label for="global_endereco">Endereço</label>
+                  <input type="text" id="global_endereco" placeholder="RUA/AV, NÚMERO, COMPLEMENTO"
+                    oninput="replicarDadosCliente()">
+                </div>
+                <div class="form-item">
+                  <label for="global_bairro">Bairro</label>
+                  <input type="text" id="global_bairro" placeholder="NOME DO BAIRRO" oninput="replicarDadosCliente()">
+                </div>
+                <div class="form-item">
+                  <label for="global_cep">CEP</label>
+                  <input type="text" id="global_cep" placeholder="00000-000" oninput="replicarDadosCliente()">
+                </div>
+                <div class="form-item">
+                  <label for="global_cidade">Cidade</label>
+                  <input type="text" id="global_cidade" placeholder="NOME DA CIDADE" oninput="replicarDadosCliente()">
+                </div>
+                <div class="form-item">
+                  <label for="global_estado">Estado</label>
+                  <input type="text" id="global_estado" placeholder="SIGLA DO ESTADO" oninput="replicarDadosCliente()">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção: Bancos (Submenu) -->
+          <div class="cover hidden col-12" id="secao-bancos" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <a href="https://autofacil.stellantisfinanciamentos.com.br/login" target="_blank" class="cover-btn"
+                id="btn-banco-psa" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-psa')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">PSA <span class="muted-text">(Stellantis)</span></div>
+              </a>
+              <a href="https://digital.bancovw.com.br/FrontEnd/login" target="_blank" class="cover-btn"
+                id="btn-banco-volks" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-volks')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">VOLKS</div>
+              </a>
+              <a href="https://www.credlineitau.com.br/" target="_blank" class="cover-btn" id="btn-banco-itau"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-itau')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">ITAÚ CREDLINE</div>
+              </a>
+              <a href="https://financiamentos.bradesco/financiamentos/" target="_blank" class="cover-btn"
+                id="btn-banco-bradesco" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-bradesco')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">BRADESCO</div>
+              </a>
+              <a href="https://financeira.safra.com.br/portal-veiculos/login" target="_blank" class="cover-btn"
+                id="btn-banco-safra" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-safra')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">SAFRA</div>
+              </a>
+              <a href="https://c6auto.com.br/originacaolojista/login" target="_blank" class="cover-btn"
+                id="btn-banco-c6" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-c6')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">C6 AUTO</div>
+              </a>
+              <a href="https://parceiro.bv.com.br/ng-gpar-base-login/#" target="_blank" class="cover-btn"
+                id="btn-banco-bv" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-bv')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">BV FINANCEIRA</div>
+              </a>
+              <a href="https://veiculos.bancopan.com.br/login" target="_blank" class="cover-btn" id="btn-banco-pan"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-banco-pan')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">BANCO PAN</div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Seção: Certidões (Submenu) -->
+          <div class="cover hidden col-12" id="secao-certidoes" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <a href="https://www2.trf4.jus.br/trf4/processos/certidao/index.php?string_cpf=01525186060"
+                target="_blank" class="cover-btn" id="btn-cert-judicial" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-cert-judicial')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CERTIDÃO JUDICIAL</div>
+              </a>
+              <a href="https://www.tst.jus.br/certidao1" target="_blank" class="cover-btn" id="btn-cert-trabalhista"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-cert-trabalhista')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CERTIDÃO TRABALHISTA</div>
+              </a>
+              <a href="https://www.tjrs.jus.br/novo/processos-e-servicos/servicos-processuais/emissao-de-antecedentes-e-certidoes/"
+                target="_blank" class="cover-btn" id="btn-cert-tjrs" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-cert-tjrs')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CERTIDÃO DE ANTECEDENTES TJRS</div>
+              </a>
+              <a href="https://pje.trt4.jus.br/certidoes/inicio" target="_blank" class="cover-btn" id="btn-cert-trt4"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-cert-trt4')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CERTIDÕES TRT4</div>
+              </a>
+              <a href="https://servicos.receitafederal.gov.br/servico/certidoes/#/home" target="_blank"
+                class="cover-btn" id="btn-cert-federal" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-cert-federal')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CERTIDÃO REGULARIDADE FISCAL</div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Seção: Venda Direta (Submenu) -->
+          <div class="cover hidden col-12" id="secao-venda-direta" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <a href="https://albertomateus10.github.io/contratovd/" target="_blank" class="cover-btn"
+                id="btn-vd-contrato" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-contrato')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CONTRATO DE VD</div>
+              </a>
+
+
+              <a href="https://docs.google.com/spreadsheets/d/1ZXum0nBBdqZSwIddWKTyh5IUswc20KHGdyvB36mGh_Q/edit?usp=sharing"
+                target="_blank" class="cover-btn" id="btn-vd-estoque" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-estoque')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">INSERIR SEMINOVOS A RECEBER <small
+                    style="font-size: 10px; opacity: 0.7; font-weight: normal;">(preenchido pelo ADM)</small></div>
+              </a>
+              <a href="https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp"
+                target="_blank" class="cover-btn" id="btn-vd-cnpj" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-cnpj')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CARTÃO CNPJ</div>
+              </a>
+              <a href="https://www.sefaz.rs.gov.br/consultas/contribuinte" target="_blank" class="cover-btn"
+                id="btn-vd-ie" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-ie')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">INSCRIÇÃO ESTADUAL</div>
+              </a>
+              <a href="https://dfe-portal.svrs.rs.gov.br/cte/ccc?origem=2" target="_blank" class="cover-btn"
+                id="btn-vd-ie-prod" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-ie-prod')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">IE PRODUTOR RURAL</div>
+              </a>
+              <a href="https://ws.bndes.gov.br/cfi_catalogo/produto/04281040" target="_blank" class="cover-btn"
+                id="btn-vd-bndes-fio" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-bndes-fio')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">BNDES FIORINO</div>
+              </a>
+              <a href="https://ws.bndes.gov.br/cfi_catalogo/produto/04260579" target="_blank" class="cover-btn"
+                id="btn-vd-bndes-str-f" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-bndes-str-f')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">BNDES STRADA FREEDOM</div>
+              </a>
+              <a href="https://ws.bndes.gov.br/cfi_catalogo/produto/04263917" target="_blank" class="cover-btn"
+                id="btn-vd-bndes-str-e" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-vd-bndes-str-e')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">BNDES STRADA ENDURANCE</div>
+              </a>
+            </div>
+          </div>
+
+
+          <!-- Seção: Plataformas (Submenu) -->
+          <div class="cover hidden col-12" id="secao-plataformas" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <a href="http://152.67.47.29:8080/crmgold/veiculo.zul" target="_blank" class="cover-btn" id="btn-plat-nbs"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-nbs')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">NBS Gold</div>
+              </a>
+              <a href="https://apps.docusign.com/send/home" target="_blank" class="cover-btn" id="btn-plat-docusign"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-docusign')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">Docusing</div>
+              </a>
+              <a href="https://apps.autoavaliar.com.br/login/app" target="_blank" class="cover-btn" id="btn-plat-auto"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-auto')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">Auto Avaliar</div>
+              </a>
+              <a href="https://app.dugestao.com.br/#/home" target="_blank" class="cover-btn" id="btn-plat-dugestao"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-dugestao')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">DUGESTÃO</div>
+              </a>
+              <a href="https://app.duleads.com.br/#/auth" target="_blank" class="cover-btn" id="btn-plat-duleads"
+                style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-duleads')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">DULEADS</div>
+              </a>
+              <a href="https://psa.csod.com/login/render.aspx?id=stellantistraining" target="_blank" class="cover-btn"
+                id="btn-plat-treina" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-treina')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">Portal de Treinamentos FIAT</div>
+              </a>
+              <a href="https://linkentry-ames.fiat.com/pages/home/" target="_blank" class="cover-btn"
+                id="btn-plat-linkentry" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-linkentry')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">LinkEntry</div>
+              </a>
+              <a href="https://drive.google.com/drive/folders/11Oyq1zN6VKhpaDZleNjchiB-Fdp0AyPZ?usp=sharing"
+                target="_blank" class="cover-btn" id="btn-plat-manuais" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-manuais')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">Manuais do NBS</div>
+              </a>
+              <a href="https://mailpro.uol.com.br/sanmarinofiat.com.br/" target="_blank" class="cover-btn"
+                id="btn-plat-uol" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-plat-uol')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">WebMail San Marino <span class="muted-text">(UOL)</span></div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Seção: Cartas do Mês (Submenu) -->
+          <div class="cover hidden col-12" id="secao-cartas" style="margin-top: 20px;">
+            <div style="height: 10px;"></div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Material da Montadora e Bancos</div>
+              <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+                <a href="https://albertomateus10.github.io/pdfsdomes/cartafiat.pdf" target="_blank" class="cover-btn"
+                  id="btn-carta-fiat" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-carta-fiat')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Carta do mês <span class="muted-text">(Montadora)</span></div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/cartabanco.pdf" target="_blank" class="cover-btn"
+                  id="btn-carta-banco" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-carta-banco')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Carta do mês <span class="muted-text">(Banco)</span></div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/gama.pdf" target="_blank" class="cover-btn"
+                  id="btn-carta-gama" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-carta-gama')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">GAMA atualizada</div>
+                </a>
+                <a href="https://albertomateus10.github.io/tabeladerevisoesfiat/" target="_blank" class="cover-btn"
+                  id="btn-pos-precos" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-precos')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">PREÇO DAS REVISÕES (Fiat)</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">CheckLists de Venda</div>
+              <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+                <button class="cover-btn" id="btn-chk-avista" type="button" onclick="mostrarAvisoConstrucao('checklist')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-chk-avista')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">A vista</div>
+                </button>
+                <button class="cover-btn" id="btn-chk-dinheiro-usado" type="button"
+                  onclick="mostrarAvisoConstrucao('checklist')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-chk-dinheiro-usado')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Dinheiro e com usado na troca</div>
+                </button>
+                <button class="cover-btn" id="btn-chk-financiamento-usado" type="button"
+                  onclick="mostrarAvisoConstrucao('checklist')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-chk-financiamento-usado')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Financiamento e usado na troca</div>
+                </button>
+                <button class="cover-btn" id="btn-chk-dinheiro-financiamento" type="button"
+                  onclick="mostrarAvisoConstrucao('checklist')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-chk-dinheiro-financiamento')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Dinheiro e financiamento</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção: Seminovos (Submenu) -->
+          <div class="cover hidden col-12" id="secao-seminovos" style="margin-top: 20px;">
+            <div style="height: 10px;"></div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Estoque e Ferramentas</div>
+              <div class="cover-grid">
+                <a href="https://sanmarinomultimarcas.com.br/seminovos/" target="_blank" class="cover-btn"
+                  id="btn-semi-estoque" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-estoque')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Estoque de Seminovos (site)</div>
+                </a>
+
+
+                <a href="https://albertomateus10.github.io/preparacaoparaentrega/" target="_blank" class="cover-btn"
+                  id="btn-semi-checklist" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-checklist')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Checklist de Entrega <span class="muted-text">(Seminovo)</span></div>
+                </a>
+                <a href="https://chatgpt.com/g/g-67b0af6b29708191982adcba7a5e3fb4-clique-aqui-e-crie-um-anuncio-para-o-seu-veiculo"
+                  target="_blank" class="cover-btn" id="btn-semi-robo" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-robo')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Robô de Anúncios</div>
+                </a>
+                <a href="https://amcsolucoesdigitais.github.io/qrcodecompreco/" target="_blank" class="cover-btn"
+                  id="btn-semi-qrcode" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-qrcode')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">QR CODE de Preços</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Links para Avaliação Online</div>
+              <div class="cover-grid">
+                <a href="https://tradein.autoavaliar.com.br/group/san-marino-matriz/7508zPgjgw/0577zMjgBw?c=6775zPB"
+                  target="_blank" class="cover-btn" id="btn-semi-aval-matriz" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-aval-matriz')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">MATRIZ</div>
+                </a>
+                <a href="https://tradein.autoavaliar.com.br/group/san-marino-zona-sul/7508zPgjgw/3201zdjMgPCCAC?c=6775zPB"
+                  target="_blank" class="cover-btn" id="btn-semi-aval-zs" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-aval-zs')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">ZONA SUL</div>
+                </a>
+                <a href="https://tradein.autoavaliar.com.br/group/san-marino-viamao/7508zPgjgw/3201zPjMgPCCAC?c=6775zPB"
+                  target="_blank" class="cover-btn" id="btn-semi-aval-viam" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-aval-viam')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">VIAMÃO</div>
+                </a>
+                <a href="https://tradein.autoavaliar.com.br/group/san-marino-gravatai/7508zPgjgw/3201zMjMgPCCAC?c=6775zPB"
+                  target="_blank" class="cover-btn" id="btn-semi-aval-grav" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-aval-grav')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">GRAVATAÍ E MULTIMARCAS</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Fluxos de avaliação e preparação de veículos
+              </div>
+              <div class="cover-grid">
+                <a href="https://albertomateus10.github.io/fluxodeavaliacao/" target="_blank" class="cover-btn"
+                  id="btn-semi-fluxo-aval" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-fluxo-aval')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Fluxo de Avaliação</div>
+                </a>
+                <a href="https://albertomateus10.github.io/solicitacaodemanutencao/" target="_blank" class="cover-btn"
+                  id="btn-semi-checklist-prep" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-semi-checklist-prep')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Check List de Preparação</div>
+                </a>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Seção: Textos para Contrato (NOVO) -->
+          <div class="cover hidden col-12" id="secao-textos-contrato" style="margin-top: 20px;">
+
+
+            <div class="doc-card" style="max-width: 1100px; margin: 0 auto; background: var(--surface);">
+
+              <div class="text-grid">
+                <!-- Garantia em Dobro -->
+                <div class="text-box-card" id="btn-txt-garantia" onclick="verTextoContrato('garantia')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-garantia')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Garantia em Dobro</span>
+                </div>
+
+                <!-- 1-Sem quitação -->
+                <div class="text-box-card" id="btn-txt-sem-quitacao" onclick="verTextoContrato('sem-quitacao-total')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-sem-quitacao')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Sem quitação (Entrada total)</span>
+                </div>
+
+                <!-- 2-Sem quitação COM troco -->
+                <div class="text-box-card" id="btn-txt-sem-quitacao-troco"
+                  onclick="verTextoContrato('sem-quitacao-troco')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-sem-quitacao-troco')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <span>Sem quitação (Troco na troca)</span>
+                </div>
+
+                <!-- 3-Com quitação -->
+                <div class="text-box-card" id="btn-txt-com-quitacao" onclick="verTextoContrato('com-quitacao')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-com-quitacao')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Com quitação</span>
+                </div>
+
+                <!-- 4-Com quitação e troco -->
+                <div class="text-box-card" id="btn-txt-com-quitacao-troco"
+                  onclick="verTextoContrato('com-quitacao-troco')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-com-quitacao-troco')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <span>Com quitação e troco</span>
+                </div>
+
+                <!-- 5-Quitação superior -->
+                <div class="text-box-card" id="btn-txt-quitacao-superior"
+                  onclick="verTextoContrato('quitacao-superior')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-quitacao-superior')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <span>Quitação superior ao avaliado</span>
+                </div>
+
+                <!-- Bônus Fiat Lovers -->
+                <div class="text-box-card" id="btn-txt-bonus-lovers" onclick="verTextoContrato('bonus-lovers')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-bonus-lovers')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Bônus Fiat Lovers</span>
+                </div>
+
+                <!-- Entrega -->
+                <div class="text-box-card" id="btn-txt-entrega" onclick="verTextoContrato('entrega')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-entrega')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Texto de Entrega</span>
+                </div>
+
+                <!-- SPF -->
+                <div class="text-box-card" id="btn-txt-spf" onclick="verTextoContrato('spf')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-spf')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Contrato com SPF</span>
+                </div>
+
+                <!-- Cartão com taxa -->
+                <div class="text-box-card" id="btn-txt-cartao-taxa" onclick="verTextoContrato('cartao-taxa')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-cartao-taxa')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Cartão de Crédito com taxa</span>
+                </div>
+
+                <!-- Consórcio -->
+                <div class="text-box-card" id="btn-txt-consorcio" onclick="verTextoContrato('consorcio')">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-txt-consorcio')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <span>Consórcio</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Viewer -->
+            <div id="modal-text-viewer" class="text-viewer-modal">
+              <div class="text-viewer-content">
+                <div class="text-viewer-header">
+                  <h3 id="tv-title">Título do Texto</h3>
+                  <button class="btn-close-modal" onclick="fecharViewer()"
+                    style="background:none; border:none; cursor:pointer; font-size:18px; color:var(--muted);"><i
+                      class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="text-viewer-body">
+                  <p id="tv-text" class="text-viewer-text"></p>
+                </div>
+                <div class="text-viewer-footer">
+                  <button class="btn-modal-close" onclick="fecharViewer()">Fechar</button>
+                  <button class="btn-modal-copy" onclick="copiarDoViewer()">
+                    <i class="fa-regular fa-copy"></i> Copiar Texto
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <script>
+              const TEXTOS_CONTRATO = {
+                'garantia': {
+                  title: 'Garantia em Dobro',
+                  content: 'Garantia em Dobro:\nO Código de Defesa do Consumidor (Lei 8078/90), em seu artigo 26, inciso II, estabelece que o consumidor tem direito a reclamar pelos vícios aparentes ou de fácil constatação por: "noventa dias, tratando-se de fornecimento de serviço e de produtos duráveis". Nesse caso, pela aquisição do seu veículo, a San Marino, em caráter promocional e temporário, está concedendo GARANTIA EM DOBRO,  estendendo o prazo definido na lei por 90 dias adicionais, totalizando 180 dias,  para o veículo objeto deste contrato. A extensão do prazo adicional fica limitada a 180 dias ou 8.000 km, considerando-se a quilometragem registrada no contrato ou na nota fiscal, valendo a condição que ocorrer primeiro. As condições de extensão do prazo de reclamação, desde o dia 91 até o dia 180 ou até o limite de quilometragem (8.000 km), abrangem, única e exclusivamente, eventos  no motor e na caixa de câmbio que não tenham sido constatados, de forma fácil e aparente, na retirada do veículo, excluindo-se, ainda, defeitos provocados pelo mau uso do veículo.'
+                },
+                'sem-quitacao-total': {
+                  title: 'Sem quitação (Entrada total)',
+                  content: 'Veículo seminovo_____placa ______ ano/mod _____ com _____ km, avaliado em R$ ______ ,valor total utilizado como entrada neta negociação.'
+                },
+                'sem-quitacao-troco': {
+                  title: 'Sem quitação (Troco na troca)',
+                  content: 'OPÇÃO 2.1:\nVeículo seminovo ______ placa _____ ano/mod _____ com _____ km, avaliado em R$ _____, sendo utilizado como entrada nesta negociação o valor de R$_____ e a diferença será devolvida ao cliente no prazo de até 10 dias úteis após entrega do veículo seminovo. Dados bancários do cliente: Banco ______ Ag. _____ Conta ______.\n\nOPÇÃO 2.2:\nFaz parte deste negociação a compra e venda do veículo seminovo ______ placa _____ ano/mod _____ com _____ km, avaliado em R$ _____, onde o valor avaliado será devolvido integralmente ao cliente no prazo de até 10 dias úteis após entrega do veículo seminovo. Este veículo deverá ser entregue com manual, chave reserva, cartão code, livre de Ônus e multas, tendo como data limite a entrega do veículo adquirido. Dados bancários do cliente: Banco _____ Ag. ______ Conta ______.'
+                },
+                'com-quitacao': {
+                  title: 'Com quitação',
+                  content: 'Veículo seminovo _____ placa ______ ano/mod ______ com ______ km, avaliado em R$ ______, quitação sob responsabilidade do cliente, sendo realizada pela San Marino, no prazo de até 10 dias úteis após entrega do veículo seminovo, no valor de R$ ______, junto ao banco ______. Caso haja diferença no valor de quitação para mais ou menos, esta deverá ser cobrada ou ressarcida junto ao cliente.'
+                },
+                'com-quitacao-troco': {
+                  title: 'Com quitação e troco na troca',
+                  content: 'Veículo seminovo ______ placa ______ ano/mod ______ com ______km, avaliado em R$ ______, quitação sob responsabilidade do cliente, sendo realizada pela San Marino, no prazo de até 10 dias úteis após entrega do veículo seminovo, no valor de R$ ______, junto ao banco ______. Diferença no valor de R$ ______ será devolvida ao cliente após quitação do veículo seminovo. Dados bancários do cliente: Banco ______ Ag. ______ Conta ______.'
+                },
+                'quitacao-superior': {
+                  title: 'Quitação superior ao avaliado',
+                  content: 'Veículo seminovo ______ placa _______ ano/mod ______ com ______ km, avaliado em R$ ______, quitação sob responsabilidade do cliente, sendo realizada pela San Marino, no prazo de até 10 dias úteis após entrega do veículo seminovo, no valor de R$ ______, junto ao banco ______. Diferença de quitação paga pelo cliente no valor de R$ ______, caso haja diferença de quitação para mais ou menos, está será cobrada ou ressarcida ao cliente. Banco ______ Ag. ______ Conta _______.'
+                },
+                'bonus-lovers': {
+                  title: 'Bônus Fiat Lovers',
+                  content: 'APLICADO DESCONTO DE R$ XXX,00 REFERENTE AO BÔNUS FIAT LOVERS'
+                },
+                'entrega': {
+                  title: 'Texto de Entrega',
+                  content: 'ENTREGA EM ATE SETE DIAS UTEIS APOS A EMISSÃO DA NOTA FISCAL E CHEGADA DE VEICULO EM ESTOQUE FÍSICO'
+                },
+                'spf': {
+                  title: 'Contrato com SPF',
+                  content: 'DECLARO ESTAR CIENTE DE QUE MEU CONTRATO DE FINANCIAMENTO, JUNTO AO BANCO ___, VINCULADO A  AQUISIÇÃO DO VEICULO ____, INCLUI O SEGURO DE PROTEÇÃO FINANCEIRA, PRESTADO POR INSTITUIÇÃO CONVENIADA E QUE ME FORAM PRESTADOS TODOS OS ESCLARECIMENTOS A RESPEITO DO REFERIDO SEGURO.'
+                },
+                'cartao-taxa': {
+                  title: 'Cartão de Crédito com taxa',
+                  content: 'CLIENTE PAGA R$_____,00 NO CARTÃO EM __ X SENDO R$_____,00 REFERENTE A (IPVA, Emplacamento, Entrada e etc …) E R$____,00 REFERENTE A TAXA ADM DO CARTÃO, CLIENTE CONCORDA COM A TAXA.'
+                },
+                'consorcio': {
+                  title: 'Consórcio',
+                  content: 'O prazo de entrega está vinculado à liberação dos recursos financeiros por parte da Administradora de Consórcios'
+                },
+                'chk-avista': {
+                  title: 'A vista',
+                  content: 'Checklist (Em construção...)'
+                },
+                'chk-dinheiro-usado': {
+                  title: 'Dinheiro e com usado na troca',
+                  content: 'Checklist (Em construção...)'
+                },
+                'chk-financiamento-usado': {
+                  title: 'Financiamento e usado na troca',
+                  content: 'Checklist (Em construção...)'
+                },
+                'chk-dinheiro-financiamento': {
+                  title: 'Dinheiro e financiamento',
+                  content: 'Checklist (Em construção...)'
+                }
+              };
+
+              function verTextoContrato(key) {
+                const data = TEXTOS_CONTRATO[key];
+                if (!data) return;
+
+                document.getElementById('tv-title').innerText = data.title;
+                document.getElementById('tv-text').innerText = data.content;
+                document.getElementById('modal-text-viewer').classList.add('active');
+              }
+
+              function fecharViewer() {
+                document.getElementById('modal-text-viewer').classList.remove('active');
+              }
+
+              function copiarDoViewer() {
+                const text = document.getElementById('tv-text').innerText;
+                navigator.clipboard.writeText(text).then(() => {
+                  if (typeof showToast === 'function') {
+                    showToast('Texto copiado com sucesso!', 'success');
+                  } else {
+                    alert('Texto copiado!');
+                  }
+                  fecharViewer();
+                });
+              }
+
+              // Fechar modal ao clicar fora
+              document.getElementById('modal-text-viewer').addEventListener('click', function (e) {
+                if (e.target === this) fecharViewer();
+              });
+            </script>
+          </div>
+
+          <!-- Seção: Gestor (Submenu) -->
+          <div class="cover hidden col-12" id="secao-gestor" style="margin-top: 20px;">
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Vendas de Veículos</div>
+              <div class="cover-grid">
+                <a href="https://jaques-edson.github.io/painel-gps-san-marino/" target="_blank" class="cover-btn" id="btn-gestor-gps"
+                  style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-gps')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">GPS (Precificação de Seminovos)</div>
+                </a>
+                <a href="http://144.22.144.53/" target="_blank" class="cover-btn" id="btn-gestor-nbs"
+                  style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-nbs')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">NBS SHOTCUT</div>
+                </a>
+                <a href="https://portal.gestautobrasil.com.br/auth/login" target="_blank" class="cover-btn"
+                  id="btn-gestor-gestauto" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-gestauto')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">PORTAL GESTAUTO</div>
+                </a>
+                <a href="https://app.autocorp.com.br/portal/Default.aspx?ReturnUrl=%2frestrito%2fpainel-controle%2fdefault.aspx"
+                  target="_blank" class="cover-btn" id="btn-gestor-autocorp" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-autocorp')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">AUTOCORP</div>
+                </a>
+
+                <a href="https://albertomateus10.github.io/carteiravdusados/" target="_blank" class="cover-btn"
+                  id="btn-gestor-usados-vd" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-usados-vd')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">USADOS VIA VD</div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/anuncioemlote.pdf" target="_blank"
+                  class="cover-btn" id="btn-gestor-anuncio-lote" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-anuncio-lote')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Anúncios em Lote do AutoAvaliar</div>
+                </a>
+                <a href="https://adm.autoavaliar.com.br/index.php" target="_blank" class="cover-btn"
+                  id="btn-gestor-leilao" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-leilao')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">LEILÃO DO AUTOAVALIAR</div>
+                </a>
+                <a href="https://albertomateus10.github.io/contratodecompradeveiculos/" target="_blank"
+                  class="cover-btn" id="btn-gestor-contrato-compra" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-contrato-compra')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">CONTRATO DE COMPRA DE VEÍCULOS</div>
+                </a>
+                <a href="https://albertomateus10.github.io/consignacao/" target="_blank" class="cover-btn"
+                  id="btn-gestor-consignacao" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-consignacao')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">CONTRATO DE CONSIGNAÇÃO DE VEÍCULOS</div>
+                </a>
+                <a href="https://albertomateus10.github.io/procuracaoderepasse/" target="_blank" class="cover-btn"
+                  id="btn-gestor-procuracao-repasse" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-procuracao-repasse')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">PROCURAÇÃO DE REPASSE</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Pós Vendas</div>
+              <div class="cover-grid">
+                <a href="https://albertomateus10.github.io/estoquedepecas/" target="_blank" class="cover-btn"
+                  id="btn-gestor-estoque-pecas" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-estoque-pecas')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">ESTOQUE DE PEÇAS</div>
+                </a>
+                <a href="https://albertomateus10.github.io/acessorios/" target="_blank" class="cover-btn"
+                  id="btn-gestor-analise-acessorios" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-analise-acessorios')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">ANÁLISE DE ACESSÓRIOS VENDIDOS</div>
+                </a>
+                <a href="https://admin.goparts.com.br/login" target="_blank" class="cover-btn" id="btn-gestor-painel-ml"
+                  style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-painel-ml')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Painel Mercado Livre</div>
+                </a>
+                <a href="https://swat.aks.fcagroup.com/" target="_blank" class="cover-btn"
+                  id="btn-gestor-auditoria-swat" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-auditoria-swat')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Auditoria de Garantia (Swat)</div>
+                </a>
+                <a href="https://drive.google.com/file/d/1TNe6s0vzLVi2HgFJHTQlFxQU5yXVBhuT/view?usp=sharing"
+                  target="_blank" class="cover-btn" id="btn-gestor-witech2" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-witech2')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Manual do WITech2</div>
+                </a>
+                <a href="https://drive.google.com/file/d/1bFFLGyU_cGUG6D6Uh_9jT9PTiRRKG3KI/view?usp=drive_link"
+                  target="_blank" class="cover-btn" id="btn-gestor-micropod" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-gestor-micropod')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Software do Micropod</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Financeiro</div>
+              <div class="cover-grid">
+                <!-- Conteúdo em breve -->
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Contabilidade</div>
+              <div class="cover-grid">
+                <!-- Conteúdo em breve -->
+              </div>
+            </div>
+
+          </div>
+
+
+          <!-- Seção: Pós Vendas (Submenu) -->
+          <div class="cover hidden col-12" id="secao-pos-vendas" style="margin-top: 20px;">
+
+            <!-- Grupo: Outros Documentos e Consultas -->
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Documentos e Consultas</div>
+              <div class="cover-grid">
+
+                <a href="https://drive.google.com/drive/folders/1dn-1v52zMjZCnBZRgHCkAdViAOBfOG2b" target="_blank"
+                  id="btn-pos-apoio-consultor" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-apoio-consultor')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">APOIO AO CONSULTOR</div>
+                </a>
+                <a href="https://drive.google.com/drive/folders/1alytD0dOACelokORixMLNd99Ixe77han" target="_blank"
+                  id="btn-pos-apoio-mecanico" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-apoio-mecanico')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">APOIO AO MECÂNICO</div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/fichacadastralpecas.pdf" target="_blank"
+                  id="btn-pos-ficha" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-ficha')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">FICHA CADASTRAL</div>
+                </a>
+                <a href="https://www.mercadolivre.com.br/loja/san-marino-297048" target="_blank" class="cover-btn"
+                  id="btn-pos-ml" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-ml')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill"><i class="fa-solid fa-store"></i>&nbsp; Loja no Mercado Livre</div>
+                </a>
+                <a href="https://drive.google.com/drive/folders/1QxnPidWcfDlXJRLto0UujbzqaFX0NFvO" target="_blank"
+                  id="btn-pos-programacao-ferias" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-programacao-ferias')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">PROGRAMAÇÃO DE FÉRIAS</div>
+                </a>
+              </div>
+            </div>
+
+            <!-- Grupo: Sistemas -->
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Sistemas</div>
+              <div class="cover-grid">
+                <a href="https://albertomateus10.github.io/tabeladerevisoesfiat/" target="_blank" class="cover-btn"
+                  id="btn-pos-tabela-revisoes" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-tabela-revisoes')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">Preços das Revisões e troca de óleo</div>
+                </a>
+                <a href="http://144.22.144.53/" target="_blank" class="cover-btn" id="btn-pos-nbs-consultor"
+                  style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-nbs-consultor')">
+                    <i class="fa-regular fa-star"></i>
+                  </div>
+                  <div class="cover-doc-pill">NBS (Consultores)</div>
+                </a>
+                <a href="http://152.67.47.29:8080/crmparts/app?FrmLogin" target="_blank" class="cover-btn"
+                  id="btn-pos-nbs-parts" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-nbs-parts')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">NBS (CRM Parts)</div>
+                </a>
+                <a href="https://linkentry-ames.fiat.com/pages/home/" target="_blank" class="cover-btn"
+                  id="btn-pos-linkentry" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-linkentry')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">LinkEntry</div>
+                </a>
+              </div>
+            </div>
+
+            <!-- Grupo: Apoio a Garantia -->
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Apoio a Garantia</div>
+              <div class="cover-grid">
+                <a href="https://drive.google.com/file/d/1k1Q1OsH81DSLrh8GUVHE_bJaSQ2c5iOA/view?usp=sharing"
+                  target="_blank" id="btn-pos-manual" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-manual')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">MANUAL DE GARANTIA</div>
+                </a>
+                <a href="https://drive.google.com/file/d/1TkonC-50z83f7yRd0YquwbzxnUrLm2vT/view?usp=sharing"
+                  target="_blank" id="btn-pos-normas" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-pos-normas')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">NORMAS DA GARANTIA</div>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Seção: RH / DP (Submenu) -->
+          <div class="cover hidden col-12" id="secao-rh" style="margin-top: 20px;">
+            <div style="height: 10px;"></div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Documentos e Formulários</div>
+              <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+                <a href="https://albertomateus10.github.io/pdfsdomes/cartilha.pdf" target="_blank" class="cover-btn"
+                  id="btn-rh-cartilha" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-cartilha')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">CARTILHA DE INTEGRAÇÃO</div>
+                </a>
+                <a href="https://drive.google.com/drive/folders/1sPzfiY9CRUWoITpdj0wQVnDMNx9YbIT8?usp=sharing"
+                  id="btn-rh-ferias" target="_blank" class="cover-btn" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-ferias')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">CARTAS DE FÉRIAS</div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/adiantamentodecimo.pdf" target="_blank"
+                  class="cover-btn" id="btn-rh-decimo" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-decimo')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">ADIANTAMENTO DE 13º</div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/ajusteponto.pdf" target="_blank" class="cover-btn"
+                  id="btn-rh-ponto" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-ponto')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">AJUSTE DE PONTO</div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/cartaova.pdf" target="_blank" class="cover-btn"
+                  id="btn-rh-vale-refeicao" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-vale-refeicao')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">AUTORIZAÇÃO VALE REFEIÇÃO/ALIMENTAÇÃO</div>
+                </a>
+                <a href="https://albertomateus10.github.io/pdfsdomes/cartaovt.pdf" target="_blank" class="cover-btn"
+                  id="btn-rh-vale-transporte" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-vale-transporte')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">AUTORIZAÇÃO VALE TRANSPORTE</div>
+                </a>
+              </div>
+            </div>
+
+            <div class="category-group">
+              <div class="elegant-subtitle" style="margin-bottom: 15px;">Links para agendamento de consulta</div>
+              <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+                <a href="https://www.ccgsaude.com.br/agendamento" target="_blank" class="cover-btn"
+                  id="btn-rh-ccg" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-ccg')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Centro Clínico (CCG)</div>
+                </a>
+                <a href="https://www.unimed.coop.br/site/web/portoalegre/a-unimed/canais-de-atendimento" target="_blank" class="cover-btn"
+                  id="btn-rh-unimed" style="text-decoration: none;">
+                  <div class="inner-fav-btn"
+                    onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-rh-unimed')"><i
+                      class="fa-regular fa-star"></i></div>
+                  <div class="cover-doc-pill">Unimed</div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção: Localização das Lojas (Submenu) -->
+          <div class="cover hidden col-12" id="secao-lojas" style="margin-top: 15px;">
+            <div style="max-width: 700px; margin: 0 auto;">
+
+              <!-- MATRIZ -->
+              <div class="link-section" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <a href="matriz.jpeg" target="_blank" title="Clique para abrir e baixar"
+                    style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <img src="matriz.jpeg" alt="San Marino Matriz"
+                      style="width: 100%; height: 100%; object-fit: cover;">
+                  </a>
+                  <div>
+                    <div style="font-weight: 900; color: #1e3a8a; font-size: 14px;">MATRIZ</div>
+                    <div style="font-size: 11px; color: var(--muted);">Av. Ipiranga, 7110 - Porto Alegre</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <a href="https://maps.app.goo.gl/9JXa77im6c8KK72w6" target="_blank" class="btn"
+                    style="flex: 1; min-width: 150px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; text-decoration: none; font-size: 12px;">
+                    <i class="fa-solid fa-map-location-dot"></i>&nbsp; Ver no Mapa
+                  </a>
+                  <button class="btn"
+                    style="flex: 2; min-width: 200px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; font-size: 11px;"
+                    onclick="copiarLink('https://maps.app.goo.gl/9JXa77im6c8KK72w6')">
+                    <i class="fa-regular fa-copy"></i>&nbsp; copie o link e cole no whats do cliente
+                  </button>
+                </div>
+              </div>
+
+              <!-- ZONA SUL -->
+              <div class="link-section" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <a href="zonasul.jpeg" target="_blank" title="Clique para abrir e baixar"
+                    style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <img src="zonasul.jpeg" alt="San Marino Zona Sul"
+                      style="width: 100%; height: 100%; object-fit: cover;">
+                  </a>
+                  <div>
+                    <div style="font-weight: 900; color: #1e3a8a; font-size: 14px;">ZONA SUL</div>
+                    <div style="font-size: 11px; color: var(--muted);">Av. Otto Niemeyer, 650 - Bairro Tristeza, Porto
+                      Alegre
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <a href="https://maps.app.goo.gl/6JWn6nwzN2zYsqpE7" target="_blank" class="btn"
+                    style="flex: 1; min-width: 150px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; text-decoration: none; font-size: 12px;">
+                    <i class="fa-solid fa-map-location-dot"></i>&nbsp; Ver no Mapa
+                  </a>
+                  <button class="btn"
+                    style="flex: 2; min-width: 200px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; font-size: 11px;"
+                    onclick="copiarLink('https://maps.app.goo.gl/6JWn6nwzN2zYsqpE7')">
+                    <i class="fa-regular fa-copy"></i>&nbsp; copie o link e cole no whats do cliente
+                  </button>
+                </div>
+              </div>
+
+              <!-- GRAVATAÍ -->
+              <div class="link-section" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <a href="gravatai.jpeg" target="_blank" title="Clique para abrir e baixar"
+                    style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <img src="gravatai.jpeg" alt="San Marino Gravataí"
+                      style="width: 100%; height: 100%; object-fit: cover;">
+                  </a>
+                  <div>
+                    <div style="font-weight: 900; color: #1e3a8a; font-size: 14px;">GRAVATAÍ</div>
+                    <div style="font-size: 11px; color: var(--muted);">Pda. 61, RS-020, 280 - Bairro Vera Cruz,
+                      Gravataí
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <a href="https://maps.app.goo.gl/eyiSQ1vSy2q2MJpa8" target="_blank" class="btn"
+                    style="flex: 1; min-width: 150px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; text-decoration: none; font-size: 12px;">
+                    <i class="fa-solid fa-map-location-dot"></i>&nbsp; Ver no Mapa
+                  </a>
+                  <button class="btn"
+                    style="flex: 2; min-width: 200px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; font-size: 11px;"
+                    onclick="copiarLink('https://maps.app.goo.gl/eyiSQ1vSy2q2MJpa8')">
+                    <i class="fa-regular fa-copy"></i>&nbsp; copie o link e cole no whats do cliente
+                  </button>
+                </div>
+              </div>
+
+              <!-- MULTIMARCAS -->
+              <div class="link-section" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <a href="Multimarcas.jpeg" target="_blank" title="Clique para abrir e baixar"
+                    style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <img src="Multimarcas.jpeg" alt="San Marino Multimarcas"
+                      style="width: 100%; height: 100%; object-fit: cover;">
+                  </a>
+                  <div>
+                    <div style="font-weight: 900; color: #1e3a8a; font-size: 14px;">MULTIMARCAS</div>
+                    <div style="font-size: 11px; color: var(--muted);">Pda. 61, RS-020, 220 - Bairro Vera Cruz,
+                      Gravataí
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <a href="https://maps.app.goo.gl/Gs2jGm9dMUxUEFjv9" target="_blank" class="btn"
+                    style="flex: 1; min-width: 150px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; text-decoration: none; font-size: 12px;">
+                    <i class="fa-solid fa-map-location-dot"></i>&nbsp; Ver no Mapa
+                  </a>
+                  <button class="btn"
+                    style="flex: 2; min-width: 200px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; font-size: 11px;"
+                    onclick="copiarLink('https://maps.app.goo.gl/Gs2jGm9dMUxUEFjv9')">
+                    <i class="fa-regular fa-copy"></i>&nbsp; copie o link e cole no whats do cliente
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIAMÃO -->
+              <div class="link-section" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <a href="Viamão.jpeg" target="_blank" title="Clique para abrir e baixar"
+                    style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">
+                    <img src="Viamão.jpeg" alt="San Marino Viamão"
+                      style="width: 100%; height: 100%; object-fit: cover;">
+                  </a>
+                  <div>
+                    <div style="font-weight: 900; color: #1e3a8a; font-size: 14px;">VIAMÃO</div>
+                    <div style="font-size: 11px; color: var(--muted);">Av. Sen. Salgado Filho, 9775 - Bairro Jardim
+                      Krahe,
+                      Viamão</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <a href="https://maps.app.goo.gl/6Rpe55NcW35yD6dCA" target="_blank" class="btn"
+                    style="flex: 1; min-width: 150px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; text-decoration: none; font-size: 12px;">
+                    <i class="fa-solid fa-map-location-dot"></i>&nbsp; Ver no Mapa
+                  </a>
+                  <button class="btn"
+                    style="flex: 2; min-width: 200px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #1e3a8a; box-shadow: none; border: 1px solid #e2e8f0; font-size: 11px;"
+                    onclick="copiarLink('https://maps.app.goo.gl/6Rpe55NcW35yD6dCA')">
+                    <i class="fa-regular fa-copy"></i>&nbsp; copie o link e cole no whats do cliente
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- =========================
+         ÁREA DOS DOCUMENTOS (ocultos até clicar)
+         ========================= -->
+
+          <!-- =========================
+         DADOS GLOBAIS DO CLIENTE
+         ========================= -->
+
+
+          <!-- Seção: Catálogo de Acessórios (Submenu) -->
+          <div class="cover hidden col-12" id="secao-acessorios" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <a href="https://docs.google.com/spreadsheets/d/1uyfpSzx-PHvC5CxaoBhvl0UAkOWmjinl/edit?usp=sharing&ouid=111425340034181852301&rtpof=true&sd=true"
+                target="_blank" class="cover-btn" id="btn-ace-geral" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-geral')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">CATÁLOGO GERAL</div>
+              </a>
+              <a href="https://drive.google.com/file/d/1qmTDng6uee5IfkempmkoLgt0b9ros-vY/view" target="_blank"
+                id="btn-ace-fastback" class="cover-btn" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-fastback')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">FASTBACK</div>
+              </a>
+              <a href="https://drive.google.com/file/d/1pUMybKyozoucig3txwNThiVpYFnTTPks/view" target="_blank"
+                id="btn-ace-pulse" class="cover-btn" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-pulse')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">PULSE</div>
+              </a>
+              <a href="https://drive.google.com/file/d/1S1X1TYLhCkPelz2BBrgWErmk1rJDzPWv/view" target="_blank"
+                id="btn-ace-toro" class="cover-btn" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-toro')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">TORO</div>
+              </a>
+              <a href="https://drive.google.com/file/d/1eiWgVvv9OdyNWqKUvuXhFUWJL6XiDXIS/view" target="_blank"
+                id="btn-ace-strada" class="cover-btn" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-strada')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">STRADA</div>
+              </a>
+              <a href="https://drive.google.com/file/d/1zxKdhjsFpRCmPyFV1SSXvuxnuG5Pp-UD/view" target="_blank"
+                id="btn-ace-argo" class="cover-btn" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-argo')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">ARGO</div>
+              </a>
+              <a href="https://drive.google.com/file/d/1c1qSc5EKP59wkuikTdVub5vy_uLlsOzj/view" target="_blank"
+                id="btn-ace-mobi" class="cover-btn" style="text-decoration: none;">
+                <div class="inner-fav-btn"
+                  onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-ace-mobi')"><i
+                    class="fa-regular fa-star"></i></div>
+                <div class="cover-doc-pill">MOBI</div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Seção: San Marino Online (Submenu) -->
+          <div class="cover hidden col-12" id="secao-online" style="margin-top: 20px;">
+            <div class="cover-grid" style="max-width: 900px; margin: 0 auto;">
+              <a href="https://sanmarinofiat.com.br/" target="_blank" class="cover-btn" id="btn-online-fiat"
+                style="text-decoration: none;">
+                <div class="cover-doc-pill"><i class="fa-solid fa-car"></i>&nbsp; San Marino Fiat</div>
+              </a>
+              <a href="https://sanmarinomultimarcas.com.br/" target="_blank" class="cover-btn" id="btn-online-multi"
+                style="text-decoration: none;">
+                <div class="cover-doc-pill"><i class="fa-solid fa-car-side"></i>&nbsp; San Marino Multimarcas</div>
+              </a>
+              <a href="https://www.instagram.com/sanmarinofiat/" target="_blank" class="cover-btn" id="btn-online-insta"
+                style="text-decoration: none;">
+                <div class="cover-doc-pill"><i class="fa-brands fa-instagram"></i>&nbsp; Instagram</div>
+              </a>
+              <a href="https://www.linkedin.com/company/san-marino-veiculos/posts/?feedView=all" target="_blank"
+                class="cover-btn" id="btn-online-linked" style="text-decoration: none;">
+                <div class="cover-doc-pill"><i class="fa-brands fa-linkedin"></i>&nbsp; Linkedin</div>
+              </a>
+              <a href="https://www.facebook.com/sanmarinofiat/" target="_blank" class="cover-btn" id="btn-online-face"
+                style="text-decoration: none;">
+                <div class="cover-doc-pill"><i class="fa-brands fa-facebook"></i>&nbsp; Facebook</div>
+              </a>
+              <a href="https://www.youtube.com/@sanmarinofiat9558" target="_blank" class="cover-btn" id="btn-online-yt"
+                style="text-decoration: none;">
+                <div class="cover-doc-pill"><i class="fa-brands fa-youtube"></i>&nbsp; YouTube</div>
+              </a>
+            </div>
+          </div>
+
+
+
+
+          <div class="doc-area col-12" id="docArea">
+
+            <!-- =========================
+           1) PROCURAÇÃO DE ACORDO
+           ========================= -->
+            <div class="doc-card hidden" id="doc-acordo">
+              <div class="head">
+                <div class="doc-title-pill doc-title-acordo">PROCURAÇÃO DE ACORDO</div>
+              </div>
+
+              <div class="section-title">Dados do Cliente</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="acordo_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="acordo_nomeCompleto" placeholder="Nome completo do cliente">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_cpfCnpj">CPF/CNPJ</label>
+                  <input type="text" id="acordo_cpfCnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_endereco">Endereço</label>
+                  <input type="text" id="acordo_endereco" placeholder="Rua/av, número, complemento">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_bairro">Bairro</label>
+                  <input type="text" id="acordo_bairro" placeholder="Nome do bairro">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_cep">CEP</label>
+                  <input type="text" id="acordo_cep" placeholder="00000-000">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_cidade">Cidade</label>
+                  <input type="text" id="acordo_cidade" placeholder="Nome da cidade">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_estado">Estado</label>
+                  <input type="text" id="acordo_estado" placeholder="Sigla do Estado">
+                </div>
+              </div>
+
+              <div class="section-title">Dados do Veículo</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="acordo_modelo">Modelo do Veículo</label>
+                  <input type="text" id="acordo_modelo" placeholder="Ex: CHEVROLET/ONIX">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_placa">Placa</label>
+                  <input type="text" id="acordo_placa" placeholder="ABC1D23">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_anoModelo">Ano/Modelo</label>
+                  <input type="text" id="acordo_anoModelo" placeholder="2020/2021">
+                </div>
+                <div class="form-item">
+                  <label for="acordo_chassi">Chassi *</label>
+                  <input type="text" id="acordo_chassi" placeholder="17 caracteres" maxlength="17">
+                  <span id="error-acordo_chassi" class="validation-error">O Chassi deve ter exatamente 17
+                    caracteres.</span>
+                </div>
+                <div class="form-item">
+                  <label for="acordo_cor">Cor</label>
+                  <input type="text" id="acordo_cor" placeholder="Cor do veículo">
+                </div>
+              </div>
+
+              <div class="doc-actions">
+                <button class="btn btn-acordo" type="button" onclick="gerarProcuracaoAcordo()"> Gerar
+                  Procuração de
+                  Acordo</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           2) PROCURAÇÃO DE RECEBIMENTO
+           ========================= -->
+            <div class="doc-card hidden" id="doc-recebimento">
+              <div class="head">
+                <div class="doc-title-pill doc-title-receb">PROCURAÇÃO DE RECEBIMENTO DO USADO</div>
+              </div>
+
+              <div class="section-title">Dados do Cliente</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="rec_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="rec_nomeCompleto" placeholder="Nome completo do cliente">
+                </div>
+                <div class="form-item">
+                  <label for="rec_cpfCnpj">CPF/CNPJ</label>
+                  <input type="text" id="rec_cpfCnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-item">
+                  <label for="rec_endereco">Endereço</label>
+                  <input type="text" id="rec_endereco" placeholder="Rua/av, número, complemento">
+                </div>
+                <div class="form-item">
+                  <label for="rec_bairro">Bairro</label>
+                  <input type="text" id="rec_bairro" placeholder="Nome do bairro">
+                </div>
+                <div class="form-item">
+                  <label for="rec_cidade">Cidade</label>
+                  <input type="text" id="rec_cidade" placeholder="Nome da cidade">
+                </div>
+                <div class="form-item">
+                  <label for="rec_estado">Estado</label>
+                  <input type="text" id="rec_estado" placeholder="Sigla do Estado">
+                </div>
+              </div>
+
+              <div class="section-title">Dados do Veículo</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="rec_modelo">Modelo do Veículo</label>
+                  <input type="text" id="rec_modelo" placeholder="Ex: CHEVROLET/ONIX 1.0 TURBO">
+                </div>
+                <div class="form-item">
+                  <label for="rec_placa">Placa</label>
+                  <input type="text" id="rec_placa" placeholder="ABC1D23">
+                </div>
+                <div class="form-item">
+                  <label for="rec_anoModelo">Ano/Modelo</label>
+                  <input type="text" id="rec_anoModelo" placeholder="2020/2021">
+                </div>
+                <div class="form-item">
+                  <label for="rec_chassi">Chassi *</label>
+                  <input type="text" id="rec_chassi" placeholder="17 caracteres" maxlength="17">
+                  <span id="error-rec_chassi" class="validation-error">O Chassi deve ter exatamente 17
+                    caracteres.</span>
+                </div>
+                <div class="form-item">
+                  <label for="rec_cor">Cor</label>
+                  <input type="text" id="rec_cor" placeholder="Cor do veículo">
+                </div>
+              </div>
+
+              <div class="doc-actions">
+                <button class="btn btn-recebimento" type="button" onclick="gerarProcuracaoRecebimento()">
+                  Gerar Procuração
+                  de Recebimento do Usado</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           3) TERMO DE QUITAÇÃO
+           ========================= -->
+            <div class="doc-card hidden" id="doc-quitacao">
+              <div class="head">
+                <div class="doc-title-pill doc-title-quit">TERMO DE QUITAÇÃO (ENTRADA DE TERCEIRO)</div>
+              </div>
+
+              <div class="section-title">Dados do Cliente (Anuente)</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="quit_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="quit_nomeCompleto" placeholder="Nome completo do cliente">
+                </div>
+                <div class="form-item">
+                  <label for="quit_cpfCnpj">CPF/CNPJ</label>
+                  <input type="text" id="quit_cpfCnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-item">
+                  <label for="quit_cidade">Cidade</label>
+                  <input type="text" id="quit_cidade" placeholder="Nome da cidade">
+                </div>
+              </div>
+
+              <div class="section-title">Veículo Entregue (Entrada)</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="quit_modelo">Modelo do Veículo</label>
+                  <input type="text" id="quit_modelo" placeholder="Ex: CHEVROLET/ONIX">
+                </div>
+                <div class="form-item">
+                  <label for="quit_anoModelo">Ano/Modelo</label>
+                  <input type="text" id="quit_anoModelo" placeholder="2020/2021">
+                </div>
+                <div class="form-item">
+                  <label for="quit_placa">Placa</label>
+                  <input type="text" id="quit_placa" placeholder="ABC1D23">
+                </div>
+                <div class="form-item">
+                  <label for="quit_chassi">Chassi *</label>
+                  <input type="text" id="quit_chassi" placeholder="17 caracteres" maxlength="17">
+                  <span id="error-quit_chassi" class="validation-error">O Chassi deve ter exatamente 17
+                    caracteres.</span>
+                </div>
+                <div class="form-item">
+                  <label for="quit_cor">Cor</label>
+                  <input type="text" id="quit_cor" placeholder="Cor do veículo">
+                </div>
+              </div>
+
+              <div class="section-title">Dados do Cedente (Terceiro)</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="quit_cedenteNome">Nome/Razão Social do Cedente</label>
+                  <input type="text" id="quit_cedenteNome" placeholder="Nome completo / Razão social">
+                </div>
+                <div class="form-item">
+                  <label for="quit_cedenteCpfCnpj">CPF/CNPJ do Cedente</label>
+                  <input type="text" id="quit_cedenteCpfCnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-item">
+                  <label for="quit_cedenteEndereco">Endereço do Cedente</label>
+                  <input type="text" id="quit_cedenteEndereco" placeholder="Rua/av">
+                </div>
+                <div class="form-item">
+                  <label for="quit_cedenteNumero">Número</label>
+                  <input type="text" id="quit_cedenteNumero" placeholder="nº">
+                </div>
+              </div>
+
+              <div class="section-title">Veículo Adquirido / Contrato</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="quit_veiculoAdquiridoModelo">Modelo do veículo adquirido</label>
+                  <input type="text" id="quit_veiculoAdquiridoModelo" placeholder="Ex: FIAT/FASTBACK IMPETUS">
+                </div>
+                <div class="form-item">
+                  <label for="quit_veiculoAdquiridoAnoModelo">Ano/Modelo do veículo adquirido</label>
+                  <input type="text" id="quit_veiculoAdquiridoAnoModelo" placeholder="2024/2025">
+                </div>
+                <div class="form-item">
+                  <label for="quit_veiculoAdquiridoCor">Cor do veículo adquirido</label>
+                  <input type="text" id="quit_veiculoAdquiridoCor" placeholder="Cor">
+                </div>
+                <div class="form-item">
+                  <label for="quit_veiculoAdquiridoChassi">Chassi do veículo adquirido *</label>
+                  <input type="text" id="quit_veiculoAdquiridoChassi" placeholder="17 caracteres" maxlength="17">
+                  <span id="error-quit_veiculoAdquiridoChassi" class="validation-error">O Chassi deve ter exatamente
+                    17
+                    caracteres.</span>
+                </div>
+                <div class="form-item">
+                  <label for="quit_contratoNumero">Contrato nº</label>
+                  <input type="text" id="quit_contratoNumero" placeholder="Número do contrato">
+                </div>
+                <div class="form-item">
+                  <label for="quit_valorQuitacao">Valor (R$) da quitação</label>
+                  <input type="text" id="quit_valorQuitacao" inputmode="decimal" placeholder="Ex: 30000 ou 30.000,00">
+                </div>
+              </div>
+
+              <p class="helper"><strong></strong></p>
+
+              <div class="doc-actions">
+                <button class="btn btn-quitacao" type="button" onclick="gerarTermoQuitacaoTerceiro()"> Gerar
+                  Termo de
+                  Quitação (Terceiro)</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           4) INSTRUMENTO RESPONSABILIDADE
+           ========================= -->
+            <div class="doc-card hidden" id="doc-instrumento">
+              <div class="head">
+                <div class="doc-title-pill doc-title-inst">INSTRUMENTO DE RESPONSABILIDADE</div>
+              </div>
+
+              <div class="section-title">Dados do Cliente</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="inst_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="inst_nomeCompleto" placeholder="Nome completo do cliente">
+                </div>
+                <div class="form-item">
+                  <label for="inst_cpfCnpj">CPF/CNPJ</label>
+                  <input type="text" id="inst_cpfCnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-item">
+                  <label for="inst_cidade">Cidade</label>
+                  <input type="text" id="inst_cidade" placeholder="Nome da cidade">
+                </div>
+                <div class="form-item">
+                  <label for="inst_placa">Placa (opcional p/ nome do arquivo)</label>
+                  <input type="text" id="inst_placa" placeholder="ABC1D23 (opcional)">
+                </div>
+              </div>
+
+              <div class="section-title">Dados do Veículo</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="inst_modelo">Modelo do Veículo</label>
+                  <input type="text" id="inst_modelo" placeholder="Ex: FIAT/FASTBACK">
+                </div>
+                <div class="form-item">
+                  <label for="inst_chassi">Chassi *</label>
+                  <input type="text" id="inst_chassi" placeholder="17 caracteres" maxlength="17">
+                  <span id="error-inst_chassi" class="validation-error">O Chassi deve ter exatamente 17
+                    caracteres.</span>
+                </div>
+              </div>
+
+              <div class="section-title">Dados de Entrega</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="inst_dataEntrega">Data da entrega</label>
+                  <input type="text" id="inst_dataEntrega" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10">
+                </div>
+                <div class="form-item">
+                  <label for="inst_horaEntrega">Hora da entrega</label>
+                  <input type="text" id="inst_horaEntrega" inputmode="numeric" placeholder="hh:mm" maxlength="5">
+                </div>
+              </div>
+
+
+
+              <div class="doc-actions">
+                <button class="btn btn-responsabilidade" type="button" onclick="gerarInstrumentoResponsabilidade()">
+                  Gerar
+                  Instrumento de Responsabilidade</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           5) DECLARAÇÃO DE RESIDÊNCIA (placa removida)
+           ========================= -->
+            <div class="doc-card hidden" id="doc-residencia">
+              <div class="head">
+                <div class="doc-title-pill doc-title-res">DECLARAÇÃO DE RESIDÊNCIA</div>
+              </div>
+
+              <div class="section-title">Dados do Declarante</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="res_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="res_nomeCompleto" placeholder="Nome completo do cliente">
+                </div>
+                <div class="form-item">
+                  <label for="res_cpfCnpj">CPF</label>
+                  <input type="text" id="res_cpfCnpj" placeholder="000.000.000-00">
+                </div>
+                <div class="form-item">
+                  <label for="res_endereco">Endereço</label>
+                  <input type="text" id="res_endereco" placeholder="Rua/av, número, complemento">
+                </div>
+                <div class="form-item">
+                  <label for="res_bairro">Bairro</label>
+                  <input type="text" id="res_bairro" placeholder="Nome do bairro">
+                </div>
+                <div class="form-item">
+                  <label for="res_cidade">Cidade</label>
+                  <input type="text" id="res_cidade" placeholder="Nome da cidade">
+                </div>
+                <div class="form-item">
+                  <label for="res_estado">Estado</label>
+                  <input type="text" id="res_estado" placeholder="Sigla do Estado">
+                </div>
+              </div>
+
+              <div class="doc-actions">
+                <button class="btn btn-residencia" type="button" onclick="gerarDeclaracaoResidencia()"> Gerar
+                  Declaração de
+                  Residência</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           6) DECLARAÇÃO DE DEPÓSITO PARA TERCEIROS
+           ========================= -->
+            <div class="doc-card hidden" id="doc-deposito">
+              <div class="head">
+                <div class="doc-title-pill doc-title-dep">DECLARAÇÃO DE DEPÓSITO PARA TERCEIROS</div>
+              </div>
+
+              <div class="section-title">Dados do Declarante</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="dep_nomeCompleto">Nome Completo</label>
+                  <input type="text" id="dep_nomeCompleto" placeholder="Nome completo do declarante">
+                </div>
+                <div class="form-item">
+                  <label for="dep_cpfCnpj">CPF/CNPJ</label>
+                  <input type="text" id="dep_cpfCnpj" placeholder="000.000.000-00">
+                </div>
+
+              </div>
+
+              <div class="section-title">Dados do Depósito</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="dep_valor">Valor do depósito</label>
+                  <input type="text" id="dep_valor" inputmode="decimal" placeholder="Ex: 300 ou 300,00">
+                </div>
+                <div class="form-item">
+                  <label for="dep_valorExtenso">Valor por extenso (opcional)</label>
+                  <input type="text" id="dep_valorExtenso" placeholder="Ex: trezentos reais">
+                </div>
+                <div class="form-item">
+                  <label for="dep_dataDeposito">Data do depósito</label>
+                  <input type="text" id="dep_dataDeposito" inputmode="numeric" placeholder="dd/mm/aaaa" maxlength="10">
+                </div>
+              </div>
+
+              <div class="section-title">Dados Bancários (San Marino)</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="dep_banco">Banco</label>
+                  <input type="text" id="dep_banco" placeholder="Ex: ITAU" value="ITAU">
+                </div>
+                <div class="form-item">
+                  <label for="dep_agencia">Agência</label>
+                  <input type="text" id="dep_agencia" placeholder="Ex: 0280" value="0280">
+                </div>
+                <div class="form-item">
+                  <label for="dep_conta">Conta Corrente</label>
+                  <input type="text" id="dep_conta" placeholder="Ex: 00110-8" value="00110-8">
+                </div>
+              </div>
+
+              <div class="section-title">Dados do Veículo e do Faturamento</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="dep_chassiPlaca">Chassi/Placa</label>
+                  <input type="text" id="dep_chassiPlaca" placeholder="Informe o chassi e/ou placa">
+                </div>
+                <div class="form-item">
+                  <label for="dep_faturadoNome">Faturado em nome de</label>
+                  <input type="text" id="dep_faturadoNome" placeholder="Nome / Razão social">
+                </div>
+                <div class="form-item">
+                  <label for="dep_faturadoCpfCnpj">CPF/CNPJ do faturado</label>
+                  <input type="text" id="dep_faturadoCpfCnpj" placeholder="000.000.000-00">
+                </div>
+              </div>
+
+              <div class="section-title">Local e Data (linha superior)</div>
+              <div class="form-grid">
+                <div class="form-item">
+                  <label for="dep_cidade">Cidade</label>
+                  <input type="text" id="dep_cidade" placeholder="Ex: Porto Alegre" value="">
+                </div>
+                <div class="form-item">
+                  <label for="dep_dia">Dia</label>
+                  <input type="text" id="dep_dia" inputmode="numeric" placeholder="Ex: 13" maxlength="2">
+                </div>
+                <div class="form-item">
+                  <label for="dep_mesExtenso">Mês (por extenso)</label>
+                  <input type="text" id="dep_mesExtenso" placeholder="Ex: abril">
+                </div>
+                <div class="form-item">
+                  <label for="dep_ano">Ano</label>
+                  <input type="text" id="dep_ano" inputmode="numeric" placeholder="2026" maxlength="9">
+                </div>
+              </div>
+
+              <p class="helper"> <strong></strong></p>
+
+              <div class="doc-actions">
+                <button class="btn btn-deposito" type="button" onclick="gerarDeclaracaoDepositoTerceiros()">
+                  Gerar
+                  Declaração de Depósito para Terceiros</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           7) ORÇAMENTO DETRAN
+           ========================= -->
+            <div class="doc-card hidden" id="doc-orcamento">
+              <div class="head no-print">
+                <div class="doc-title-pill"
+                  style="color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+                  ORÇAMENTO DETRAN</div>
+              </div>
+
+              <div class="orc-card" id="printable-orcamento">
+                <header class="orc-header">
+                  <h1>ORÇAMENTO PARA TRANSFERÊNCIA OU EMPLACAMENTO DE VEÍCULOS</h1>
+                </header>
+
+                <div class="orc-grid">
+                  <div class="orc-field">
+                    <label class="orc-label">Despachante:</label>
+                    <input type="text" class="orc-input" id="orc_despachante" value="RAMIRO ILHA" style="color: #000;">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">Loja:</label>
+                    <input type="text" class="orc-input" id="orc_loja" value="SAN MARINO VEÍCULOS" style="color: #000;">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">Data do Recibo:</label>
+                    <input type="text" class="orc-input" id="orc_dataRecibo" style="color: #000;">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">Placas/Chassis:</label>
+                    <input type="text" class="orc-input" id="orc_placa" placeholder="Ex: JDO1234">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">Ano/Modelo/Cor:</label>
+                    <input type="text" class="orc-input" id="orc_anoModeloCor" placeholder="Ex: 2025/2026">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">Veículo:</label>
+                    <input type="text" class="orc-input" id="orc_veiculo" placeholder="Ex: TITANO RANCH">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">Proprietário:</label>
+                    <input type="text" class="orc-input" id="orc_proprietario">
+                  </div>
+                  <div class="orc-field">
+                    <label class="orc-label">CPF/CNPJ:</label>
+                    <input type="text" class="orc-input" id="orc_cpfCnpj">
+                  </div>
+                </div>
+
+                <div style="margin: 0.5rem 0;">
+                  <label class="orc-label">Observações:</label>
+                  <div id="orc_obs" class="orc-field obs-placeholder" contenteditable="true"
+                    style="min-height: 1.8rem; font-size: 0.75rem; font-weight: 900; background: #fbfbfb;"
+                    placeholder="digite aqui as observações"></div>
+                </div>
+
+                <table class="orc-table">
+                  <thead>
+                    <tr>
+                      <th>SERVIÇOS</th>
+                      <th style="width: 70px; text-align: center;">SOMA?</th>
+                      <th style="width: 140px; text-align: right;">VALORES (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orc-body">
+                    <tr>
+                      <td>Honorários devidos ao despachante</td>
+                      <td style="text-align: center;"></td>
+                      <td style="text-align: right;" class="orc-price">150,00</td>
+                    </tr>
+                    <tr>
+                      <td>Serviços Prestados pela Concessionária:</td>
+                      <td style="text-align: center;"></td>
+                      <td style="text-align: right;" class="orc-price">850,00</td>
+                    </tr>
+                    <tr>
+                      <td>IPVA/RS - Parcela Anual 2026</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price" contenteditable="true"
+                        oninput="updateOrcamentoTotal()">
+                        0,00</td>
+                    </tr>
+                    <tr>
+                      <td>Taxa de transferência de propriedade – DETRAN/RS</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price" contenteditable="true"
+                        oninput="updateOrcamentoTotal()">
+                        1.330,00</td>
+                    </tr>
+                    <tr>
+                      <td>Taxa Vistoria – DETRAN/RS</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price">114,11</td>
+                    </tr>
+                    <tr>
+                      <td>Taxa de Expedição – CRLV</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price">360,00</td>
+                    </tr>
+                    <tr>
+                      <td>Escolha de Placa (Opcional ) – DETRAN/RS</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price">519,33</td>
+                    </tr>
+                    <tr>
+                      <td>Confecção Placa Metálica Oficial – Agente credenciado</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price">370,00</td>
+                    </tr>
+                    <tr>
+                      <td>Comunicação de Venda</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price">50,98</td>
+                    </tr>
+                    <tr>
+                      <td>Seguro Placa Verde</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price">20,00</td>
+                    </tr>
+                    <tr>
+                      <td>Cartório/Cópias</td>
+                      <td style="text-align: center;"><input type="checkbox" class="orc-check"
+                          onchange="updateOrcamentoTotal()" checked></td>
+                      <td style="text-align: right;" class="orc-price" contenteditable="true"
+                        oninput="updateOrcamentoTotal()">
+                        0,00</td>
+                    </tr>
+                    <tr style="background: #fdf2f2;">
+                      <td style="font-weight: 900; color: #dc2626;">DESCONTO</td>
+                      <td style="text-align: center;"></td>
+                      <td style="text-align: right; color: #dc2626;" class="orc-price" contenteditable="true"
+                        id="orc_desconto" oninput="updateOrcamentoTotal()">0,00</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="orc-total-box">
+                  <div style="font-weight: 900; text-transform: uppercase;">Valor Consolidado:</div>
+                  <div class="orc-total-amt" id="orc-total">R$ 0,00</div>
+                </div>
+
+                <div class="orc-legal">
+                  <div style="color: red; text-align: center; font-weight: 900; margin-bottom: 0.5rem;">É
+                    DIREITO DO
+                    CONSUMIDOR A LIVRE ESCOLHA DE DESPACHANTE.</div>
+                  <p>PODE O CLIENTE OPTAR PELA CONTRATAÇÃO DE OUTRO PROFISSIONAL QUE NÃO O INDICADO PELA
+                    CONCESSIONÁRIA.</p>
+                  <p>CASO O CLIENTE OPTE PELA CONTRATAÇÃO DE OUTRO DESPACHANTE (DIVERSO DO INDICADO), A
+                    CONCESSIONÁRIA FICA
+                    DESOBRIGADA DAS SEGUINTES RESPONSABILIDADES, CABENDO-AS AO CONSUMIDOR:</p>
+                  <p>a) AO DESLOCAMENTO, RETIRADA, LOCOMOÇÃO, CONDUTOR E SEGURO DO VEÍCULO;</p>
+                  <p>b) PELO FORNECIMENTO DE PLACAS VERDES PARA A CIRCULAÇÃO DO VEÍCULO ADQUIRIDO ANTES DE
+                    EMPLACADO,
+                    PROVIDÊNCIAS QUE FICARÃO A CARGO DO CLIENTE, INCLUSIVE COM A CONTRATAÇÃO DE GUINCHO/AUTO
+                    PLATAFORMAS, CASO
+                    NECESSÁRIA, PARA A RETIRADA DO VEÍCULO DA CONCESSIONÁRIA.</p>
+                  <p>A CONCESSIONÁRIA NÃO SE RESPONSABILIZA POR EVENTUAL ATRASO NO REGISTRO E EMPLACAMENTO DO
+                    VEÍCULO, BEM
+                    COMO POR EVENTUAIS PREJUÍZOS E ENTRAVES QUE VENHAM A OCORRER.</p>
+                </div>
+
+                <div class="orc-sigs">
+                  <div>
+                    <div class="orc-sig-line">Responsável Técnico</div>
+                  </div>
+                  <div>
+                    <div class="orc-sig-line">Assinatura do Cliente</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="doc-actions no-print">
+                <button class="btn btn-acordo" type="button" onclick="gerarOrcamentoDetran()"
+                  style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #111827;"> Gerar PDF do
+                  Orçamento</button>
+              </div>
+            </div>
+
+            <!-- =========================
+           8) TEXTO CONTRATUAL
+           ========================= -->
+            <div class="doc-card hidden" id="doc-contrato">
+              <div class="head">
+                <div class="doc-title-pill doc-title-contrato">TEXTO GARANTIA EM DOBRO</div>
+              </div>
+
+              <div class="section-title"
+                style="border-top: none; margin-top: 0; padding-top: 0; text-align: center; margin-bottom: 15px;">
+                Copie o texto abaixo e cole no contrato</div>
+
+              <textarea class="texto-contratual" id="texto-contratual" readonly></textarea>
+
+              <div class="doc-actions">
+                <button class="btn btn-contrato" type="button" onclick="copiarTextoContratual()"> Copiar
+                  Texto</button>
+              </div>
+            </div>
+
+
+            <!-- =========================
+           9) CALCULADORA DE JUROS (Cartão)
+           ========================= -->
+            <div class="doc-card hidden" id="doc-calculadora">
+
+              <div class="calc-header">
+                <h2></h2>
+                <p>
+                  Digite o valor que o cliente quer passar no cartão e aperte o botão do banco desejado. Os valores
+                  aparecem somente após a seleção do banco <strong>REDE</strong> ou <strong>BANRICOMPRAS</strong>.
+                </p>
+              </div>
+
+              <!-- Nova Linha de Controles -->
+              <div class="calc-new-controls">
+                <label class="calc-new-label"></label>
+                <div class="calc-new-input-wrap">
+                  <span class="calc-new-prefix">R$</span>
+                  <input id="calc_baseValue" class="calc-new-input" type="text" inputmode="decimal"
+                    placeholder="(escreva aqui o valor)" />
+                </div>
+                <button class="calc-btn-limpar" type="button" onclick="calc_limpar()">Limpar</button>
+              </div>
+
+              <!-- Novos Botões de Banco -->
+              <div class="calc-new-bank-row" aria-label="Seleção de operadora">
+                <button class="calc-new-bank-btn rede" id="calc_btnRede" type="button" title="Selecionar REDE">
+                  <span class="calc-new-dot"></span> REDE
+                </button>
+                <button class="calc-new-bank-btn banri" id="calc_btnBanri" type="button"
+                  title="Selecionar BANRICOMPRAS">
+                  <span class="calc-new-dot"></span> BANRICOMPRAS
+                </button>
+              </div>
+
+              <div id="calc_emptyState" class="calc-new-empty-state">
+                Selecione <strong>REDE</strong> ou <strong>BANRICOMPRAS</strong> para exibir as taxas e o
+                cálculo.
+              </div>
+
+              <div id="calc_content" class="hidden">
+                <div class="calc-table-wrap" aria-label="Tabela (rolagem horizontal no mobile)">
+                  <table class="calc-sheet" aria-label="Tabela de taxas e cálculo">
+                    <thead>
+                      <tr>
+                        <th style="width:34%;">Modalidade/Parcelas</th>
+                        <th class="center" style="width:14%;">Taxa</th>
+                        <th class="center" style="width:14%;">Fator</th>
+                        <th class="center" style="width:16%;">Valor a cobrar</th>
+                        <th class="center calc-highlight calc-sep" style="width:12%;">Quantidade de parcelas
+                        </th>
+                        <th class="center calc-highlight" style="width:14%;">Valor da parcela</th>
+                      </tr>
+                    </thead>
+                    <tbody id="calc_tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="calc-rotate-note">
+                  No celular em <strong>modo retrato</strong>, deslize a tabela para o lado (rolagem
+                  horizontal). Se preferir,
+                  gire a tela para <strong>horizontal</strong> para ver tudo de uma vez.
+                </div>
+              </div>
+
+            </div>
+
+
+            <!-- =========================
+           10) LINKS ÚTEIS
+           ========================= -->
+            <div class="doc-card hidden" id="doc-links">
+              <div style="height: 10px;"></div>
+
+              <div class="category-group">
+                <!-- Grupo: Consultas Diversas -->
+                <div class="elegant-subtitle" style="margin-bottom: 15px;">Consultas Diversas</div>
+                <div class="cover-grid" style="max-width: 900px; margin: 0 auto 5px auto;">
+                  <a href="https://veiculos.fipe.org.br/" target="_blank" class="cover-btn" id="btn-link-fipe"
+                    style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-fipe')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill">TABELA FIPE</div>
+                  </a>
+                  <a href="https://www.sefaz.rs.gov.br/apps/ipva/principal/tabs/meus-veiculos" target="_blank"
+                    id="btn-link-ipva" class="cover-btn" style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-ipva')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill">VALOR DE IPVA <small
+                        style="font-size: 10px; opacity: 0.7; font-weight: normal; margin-left: 8px;">(consulta no
+                        Sefaz)</small></div>
+                  </a>
+                  <a href="https://pcsdetran.rs.gov.br/login?redirectUrl=%2Fconsulta-veiculo" target="_blank"
+                    id="btn-link-detran" class="cover-btn" style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-detran')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill">SITUAÇÃO DO DETRAN</div>
+                  </a>
+                  <a href="https://www.mtix.com.br/" target="_blank" class="cover-btn" id="btn-link-mtix"
+                    style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-mtix')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill">Download do Mtix <small
+                        style="font-size: 10px; opacity: 0.7; font-weight: normal; margin-left: 8px;">(Consulta de
+                        placa)</small></div>
+                  </a>
+
+                </div>
+              </div>
+
+
+
+              <div class="category-group">
+                <!-- Grupo: Dados da San Marino -->
+                <div class="elegant-subtitle" style="margin-bottom: 15px;">Dados da San Marino</div>
+                <div class="cover-grid" style="max-width: 900px; margin: 0 auto 5px auto;">
+                  <a href="https://albertomateus10.github.io/pdfsdomes/contasbancarias.pdf" target="_blank"
+                    id="btn-link-contas" class="cover-btn" style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-contas')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill">CONTAS BANCÁRIAS</div>
+                  </a>
+                  <a href="https://drive.google.com/drive/folders/1HIzoMcC5_ElI2OhDWsG7m_IiY4j3OXV8?usp=sharing"
+                    id="btn-link-cnpj" target="_blank" class="cover-btn" style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-cnpj')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill">CARTÃO CNPJ DAS LOJAS</div>
+                  </a>
+                </div>
+              </div>
+
+              <div class="category-group">
+                <!-- Grupo: Telefones Uteis -->
+                <div class="elegant-subtitle" style="margin-bottom: 15px;">Telefones Úteis</div>
+                <div class="cover-grid" style="max-width: 900px; margin: 0 auto 5px auto;">
+                  <a href="https://wa.me/555130211133" target="_blank" class="cover-btn" id="btn-link-wa-geral"
+                    style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-wa-geral')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill"><i class="fa-brands fa-whatsapp"></i>&nbsp; GERAL SAN MARINO</div>
+                  </a>
+                  <a href="https://wa.me/555191896086" target="_blank" class="cover-btn" id="btn-link-wa-oficina"
+                    style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-wa-oficina')">
+                      <i class="fa-regular fa-star"></i>
+                    </div>
+                    <div class="cover-doc-pill"><i class="fa-brands fa-whatsapp"></i>&nbsp; AGENDAMENTO OFICINA</div>
+                  </a>
+                  <a href="https://wa.me/555199415144" target="_blank" class="cover-btn" id="btn-link-wa-pecas"
+                    style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-wa-pecas')"><i
+                        class="fa-regular fa-star"></i></div>
+                    <div class="cover-doc-pill"><i class="fa-brands fa-whatsapp"></i>&nbsp; SETOR DE PEÇAS</div>
+                  </a>
+                  <a href="https://wa.me/555199601435" target="_blank" class="cover-btn" id="btn-link-wa-seguros"
+                    style="text-decoration: none;">
+                    <div class="inner-fav-btn"
+                      onclick="event.preventDefault(); event.stopPropagation(); toggleFavorite('btn-link-wa-seguros')">
+                      <i class="fa-regular fa-star"></i>
+                    </div>
+                    <div class="cover-doc-pill"><i class="fa-brands fa-whatsapp"></i>&nbsp; VENDAS DE SEGUROS</div>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- Modal Aviso Construção -->
+        <div id="modal-construcao" class="modal-overlay hidden">
+          <div class="modal-content-premium">
+            <button class="modal-close" onclick="fecharAvisoConstrucao()" title="Fechar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="modal-body-premium">
+              <img src="construcao.png" alt="Em Construção" class="img-construcao" id="modal-construcao-img">
+              <h2 class="modal-title-premium" id="modal-construcao-titulo">Contrato em Construção</h2>
+              <p class="modal-text-premium" id="modal-construcao-texto">
+                O Contrato de Venda Direta está em construção.
+              </p>
+              <div class="modal-badge-premium">
+                <span class="pulse-dot"></span>
+                Em breve disponível
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Senha Gestor -->
+        <div id="modal-senha-gestor" class="modal-overlay hidden">
+          <div class="modal-content-premium">
+            <button class="modal-close" onclick="fecharModalSenhaGestor()" title="Fechar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="modal-body-premium">
+              <div style="width: 60px; height: 60px; border-radius: 50%; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <h2 class="modal-title-premium">Área Restrita</h2>
+              <p class="modal-text-premium" style="margin-bottom: 20px;">
+                Esta seção é exclusiva para gestores. Digite a senha de acesso:
+              </p>
+              
+              <div style="margin-bottom: 20px; text-align: left;">
+                <input type="password" id="input-senha-gestor" placeholder="Digite a senha..." 
+                  style="width: 100%; height: 46px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--stroke); background: var(--surface); color: var(--text); font-size: 16px; font-weight: 500; outline: none; transition: border-color 0.2s;"
+                  onkeydown="if(event.key === 'Enter') confirmarSenhaGestor()">
+                <div id="erro-senha-gestor" style="color: #ef4444; font-size: 13px; margin-top: 6px; display: none;">Senha incorreta. Tente novamente.</div>
+              </div>
+
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn-modal-close" onclick="fecharModalSenhaGestor()" style="height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 24px;">Cancelar</button>
+                <button class="btn-modal-copy" onclick="confirmarSenhaGestor()" style="height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 24px;">Acessar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mobile-footer">
+          <span style="font-size: 11px; opacity: 0.8; color: var(--muted);">Desenvolvido por <b>Alberto
+              Mateus</b></span>
+        </div>
+      </main>
+
+      <!-- PAINEL DE COMUNICADOS -->
+      <aside class="comunicados-panel" id="comunicados-panel">
+
+        <!-- Cabeçalho do Painel -->
+        <div class="com-header">
+          <div class="com-header-top">
+            <div class="com-title-group">
+              <div class="com-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="com-title">Comunicados</h3>
+              </div>
+            </div>
+            <div class="com-badge-count" id="com-count-badge">0</div>
+          </div>
+
+          <!-- Busca de mensagens -->
+          <div class="com-search-wrapper">
+            <svg class="com-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="com-search-input" class="com-search-input" placeholder="Localizar mensagem..." autocomplete="off">
+            <button class="com-search-clear hidden" id="com-search-clear" title="Limpar busca">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="com-search-results hidden" id="com-search-results"></div>
+        </div>
+
+        <!-- Área de postagem (apenas gestores veem) -->
+        <div class="com-composer" id="com-composer" style="display:none;">
+          <div class="com-composer-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span>Nova Mensagem</span>
+          </div>
+          <div class="com-tag-row">
+            <select class="com-tag-select" id="com-tag-select">
+              <option value="geral">📢 Geral</option>
+              <option value="info">ℹ️ Informativos</option>
+              <option value="nps">📊 NPS</option>
+              <option value="meta">🎯 Meta</option>
+              <option value="parabens">🏆 Parabéns</option>
+            </select>
+          </div>
+          <textarea
+            id="com-textarea"
+            class="com-textarea"
+            placeholder="Escreva um comunicado para a equipe..."
+            rows="3"
+            maxlength="600"
+          ></textarea>
+          <div class="com-composer-footer">
+            <span class="com-char-count" id="com-char-count">0 / 600</span>
+            <button class="com-send-btn" id="com-send-btn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Publicar
+            </button>
+          </div>
+        </div>
+
+        <!-- Feed de mensagens -->
+        <div class="com-feed" id="com-feed">
+          <div class="com-loading" id="com-loading">
+            <div class="com-spinner"></div>
+            <span>Carregando comunicados...</span>
+          </div>
+          <div class="com-empty hidden" id="com-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p>Nenhum comunicado ainda.<br><span>Em breve aparecerão as mensagens da equipe.</span></p>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+    <div id="sidebar-overlay"></div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

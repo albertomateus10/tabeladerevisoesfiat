@@ -62,8 +62,10 @@ function initVisitCounter() {
     const counterDisplay = document.getElementById('visit-count');
     if (!counterDisplay) return;
 
-    // Fazemos a chamada para a API gratuita que incrementa e retorna o número total de visitas
-    fetch('https://api.counterapi.dev/v1/tabeladerevisoesfiat/visitas/up')
+    // Fazemos a chamada para a API gratuita que incrementa e retorna o número total de visitas.
+    // Usamos timestamp e cache: 'no-store' para garantir que todo acesso seja somado (sem cache do navegador).
+    const cacheBuster = new Date().getTime();
+    fetch(`https://api.counterapi.dev/v1/tabeladerevisoesfiat/visitas/up?t=${cacheBuster}`, { cache: 'no-store' })
         .then(response => response.json())
         .then(data => {
             if (data && data.count) {
@@ -72,6 +74,7 @@ function initVisitCounter() {
         })
         .catch(error => {
             console.error('Erro ao contabilizar visita:', error);
+            counterDisplay.innerText = '0';
         });
 }
 

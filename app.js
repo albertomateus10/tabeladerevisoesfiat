@@ -57,19 +57,22 @@ function initDate() {
     dateDisplay.innerText = dateStr;
 }
 
-// Contador de visitas via localStorage
+// Contador de visitas online (global)
 function initVisitCounter() {
     const counterDisplay = document.getElementById('visit-count');
     if (!counterDisplay) return;
 
-    let visits = localStorage.getItem('site_visit_count');
-    if (!visits) {
-        visits = 1;
-    } else {
-        visits = parseInt(visits, 10) + 1;
-    }
-    localStorage.setItem('site_visit_count', visits);
-    counterDisplay.innerText = visits.toLocaleString('pt-BR');
+    // Fazemos a chamada para a API gratuita que incrementa e retorna o número total de visitas
+    fetch('https://api.counterapi.dev/v1/tabeladerevisoesfiat/visitas/up')
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.count) {
+                counterDisplay.innerText = data.count.toLocaleString('pt-BR');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao contabilizar visita:', error);
+        });
 }
 
 

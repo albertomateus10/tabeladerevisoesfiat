@@ -57,6 +57,21 @@ function initDate() {
     dateDisplay.innerText = dateStr;
 }
 
+// Contador de visitas via localStorage
+function initVisitCounter() {
+    const counterDisplay = document.getElementById('visit-count');
+    if (!counterDisplay) return;
+
+    let visits = localStorage.getItem('site_visit_count');
+    if (!visits) {
+        visits = 1;
+    } else {
+        visits = parseInt(visits, 10) + 1;
+    }
+    localStorage.setItem('site_visit_count', visits);
+    counterDisplay.innerText = visits.toLocaleString('pt-BR');
+}
+
 
 // Inicialização da Aplicação
 document.addEventListener('DOMContentLoaded', () => {
@@ -76,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Inicializar componentes
             initDate();
+            initVisitCounter();
             initTabs();
             initRevisoes();
             initTabelaGeral();

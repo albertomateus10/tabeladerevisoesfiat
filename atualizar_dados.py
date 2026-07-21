@@ -388,6 +388,24 @@ for sheet_name in abas_veiculos:
                                 item["custos"][r_name] = round(6.0 * 110.26, 2)
                         except:
                             pass
+        elif nome_modelo == "SCUDO 2.2 (Nova)":
+            for item in itens:
+                name_lower = item["nome"].lower()
+                if item["tipo"] == "peça" and ("5w30" in name_lower or "maxpro" in name_lower) and not any(x in name_lower for x in ["filtro", "filtrante"]):
+                    for r_name in list(item["trocas"].keys()):
+                        try:
+                            val = float(item["trocas"][r_name])
+                            if val > 0:
+                                item["trocas"][r_name] = 5.2
+                        except:
+                            pass
+                    for r_name in list(item["custos"].keys()):
+                        try:
+                            val = float(item["custos"][r_name])
+                            if val > 0:
+                                item["custos"][r_name] = round(5.2 * item["preco_unitario"], 2)
+                        except:
+                            pass
         elif "TITANO" in nome_modelo.upper() or nome_modelo in ["TORO 2.2TD MY26", "TORO 2.2TD MY27", "TORO 2.0"]:
             for item in itens:
                 name_lower = item["nome"].lower()

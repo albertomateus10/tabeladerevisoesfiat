@@ -62,20 +62,39 @@ function initVisitCounter() {
     const counterDisplay = document.getElementById('visit-count');
     if (!counterDisplay) return;
 
-    // Fazemos a chamada para a API gratuita que incrementa e retorna o número total de visitas.
-    // Usamos timestamp e cache: 'no-store' para garantir que todo acesso seja somado (sem cache do navegador).
-    const cacheBuster = new Date().getTime();
-    fetch(`https://api.counterapi.dev/v1/tabeladerevisoesfiat/visitas/up?t=${cacheBuster}`, { cache: 'no-store' })
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.count) {
-                counterDisplay.innerText = data.count.toLocaleString('pt-BR');
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao contabilizar visita:', error);
-            counterDisplay.innerText = '0';
-        });
+    // Evita incrementar mais de uma vez por sessão (protege contra F5/reload)
+    const SESSION_KEY = 'fiat_revisoes_session_counted';
+    const jaContou = sessionStorage.getItem(SESSION_KEY);
+
+    // Chave única para o contador deste projeto (não mude, senão zera a contagem)
+    const PROJECT_KEY = 'tabeladerevisoesfiat_global';
+
+    if (!jaContou) {
+        // Incrementa a contagem e retorna o novo valor
+        fetch(`https://countapi.mileshilliard.com/api/v1/hit/${PROJECT_KEY}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.value !== undefined) {
+                    counterDisplay.innerText = data.value.toLocaleString('pt-BR');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao contabilizar visita:', error);
+                counterDisplay.innerText = '-';
+            });
+        
+        sessionStorage.setItem(SESSION_KEY, '1');
+    } else {
+        // Já contou nesta sessão: apenas busca o valor atual sem incrementar
+        fetch(`https://countapi.mileshilliard.com/api/v1/get/${PROJECT_KEY}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.value !== undefined) {
+                    counterDisplay.innerText = data.value.toLocaleString('pt-BR');
+                }
+            })
+            .catch(() => { counterDisplay.innerText = '-'; });
+    }
 }
 
 

@@ -57,28 +57,6 @@ function initDate() {
     dateDisplay.innerText = dateStr;
 }
 
-// Contador de visitas online (global)
-function initVisitCounter() {
-    const counterDisplay = document.getElementById('visit-count');
-    if (!counterDisplay) return;
-
-    // Chave única para o contador deste projeto
-    const PROJECT_KEY = 'tabeladerevisoesfiat_global';
-
-    // Incrementa a contagem a cada carregamento da página
-    fetch(`https://countapi.mileshilliard.com/api/v1/hit/${PROJECT_KEY}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.value !== undefined) {
-                counterDisplay.innerText = data.value.toLocaleString('pt-BR');
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao contabilizar visita:', error);
-            counterDisplay.innerText = '-';
-        });
-}
-
 
 // Inicialização da Aplicação
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Inicializar componentes
             initDate();
-            initVisitCounter();
             initTabs();
             initRevisoes();
             initTabelaGeral();
@@ -227,7 +204,7 @@ function parseVersionName(fullName) {
 // 1. GERENCIADOR DE ABAS
 // ==========================================
 function initTabs() {
-    const tabs = document.querySelectorAll('.nav-tab[data-tab]');
+    const tabs = document.querySelectorAll('.nav-tab');
     const contents = document.querySelectorAll('.tab-content');
 
     tabs.forEach(tab => {
@@ -399,7 +376,7 @@ function selectPackage(packageName) {
     }
 }
 
-window.toggleServicoAdicional = function (nomeServico, event) {
+window.toggleServicoAdicional = function(nomeServico, event) {
     if (event) event.stopPropagation();
     adicionaisDesmarcados[nomeServico] = !adicionaisDesmarcados[nomeServico];
     if (currentRevCar) {
@@ -413,7 +390,7 @@ function renderRevisionDetails(revIdx) {
 
     // Calcular horas e subtotal de MO primeiro para usar no cálculo
     let moHoras = 0;
-    let moPrecoHora = 349.0;
+    let moPrecoHora = 379.0;
     let moSubtotal = 0;
 
     currentRevCar.itens.forEach(item => {
@@ -422,7 +399,7 @@ function renderRevisionDetails(revIdx) {
         if (item.tipo === 'serviço') {
             if (qty !== undefined && qty > 0) {
                 moHoras = parseFloat(qty) || 0;
-                moPrecoHora = parseFloat(item.preco_unitario) || 349.0;
+                moPrecoHora = parseFloat(item.preco_unitario) || 379.0;
                 moSubtotal = parseFloat(custo) || (moHoras * moPrecoHora);
             }
         }
@@ -444,7 +421,7 @@ function renderRevisionDetails(revIdx) {
     const adicionaisPremium = getAdicionaisPreco('premium');
 
     // Base com MO incluída
-    const totalComMO = totalPrice;
+    const totalComMO = totalPrice + moSubtotal;
     const priceBasico = totalComMO + adicionaisBasico;
     const priceIntermediario = totalComMO + adicionaisIntermediario;
     const pricePremium = totalComMO + adicionaisPremium;
@@ -846,8 +823,6 @@ function selectOilCar(carName) {
                 (nameLower.includes('mopar maxpro') ||
                     nameLower.includes('oleo motor') ||
                     nameLower.includes('óleo motor') ||
-                    nameLower.includes('oleo do motor') ||
-                    nameLower.includes('óleo do motor') ||
                     nameLower.includes('selenia') ||
                     nameLower.includes('ineo') ||
                     nameLower.includes('0w20') ||
@@ -893,7 +868,7 @@ function selectOilCar(carName) {
 
         if (moSubtotal === 0) {
             moHoras = defaultHours;
-            moPrecoHora = 349.0;
+            moPrecoHora = 379.0;
             moSubtotal = moHoras * moPrecoHora;
         }
 

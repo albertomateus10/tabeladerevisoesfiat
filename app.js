@@ -44,6 +44,44 @@ const serviçosAdicionais = {
     ]
 };
 
+// Verifica se o modelo do veículo deve usar o código OF20009 na Limpeza do Bico Injetor
+function isDieselBicoInjetorCar(carModelo) {
+    if (!carModelo) return false;
+    const modUpper = carModelo.toUpperCase();
+    
+    // Todas as Ducatos
+    if (modUpper.includes("DUCATO")) return true;
+    
+    // Todas as Scudos
+    if (modUpper.includes("SCUDO")) return true;
+    
+    // Na Toro apenas as: TORO 2.0, TORO 2.2TD MY26, TORO 2.2TD MY27
+    if (modUpper.includes("TORO 2.0") || 
+        modUpper.includes("TORO 2.2TD MY26") || 
+        modUpper.includes("TORO 2.2TD MY27")) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Retorna os itens de serviços adicionais com o PN correto para o modelo selecionado
+function getServicosAdicionais(packageName, carModelo) {
+    const itens = serviçosAdicionais[packageName] || [];
+    const useOF20009 = isDieselBicoInjetorCar(carModelo);
+
+    return itens.map(item => {
+        if (item.nome === "Limpeza do Bico Injetor") {
+            return {
+                ...item,
+                pn: useOF20009 ? "OF20009" : "OF20005"
+            };
+        }
+        return item;
+    });
+}
+
+
 // Injeção da data atual formatada
 function initDate() {
     const dateDisplay = document.getElementById('current-date-display');
@@ -430,7 +468,7 @@ function renderRevisionDetails(revIdx) {
 
     // Cálculo dos preços dos pacotes (Acréscimos Reais calculados dinamicamente)
     const getAdicionaisPreco = (packageName) => {
-        const itens = serviçosAdicionais[packageName] || [];
+        const itens = getServicosAdicionais(packageName, currentRevCar ? currentRevCar.modelo : '');
         return itens.reduce((sum, item) => {
             if (adicionaisDesmarcados[item.nome]) {
                 return sum;
@@ -510,7 +548,7 @@ function renderRevisionDetails(revIdx) {
     });
 
     // Injetar os itens adicionais de serviço correspondentes ao pacote selecionado na tabela
-    const adicionais = serviçosAdicionais[selectedPackageName] || [];
+    const adicionais = getServicosAdicionais(selectedPackageName, currentRevCar ? currentRevCar.modelo : '');
     adicionais.forEach(item => {
         const tr = document.createElement('tr');
         let packageColor = '';

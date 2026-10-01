@@ -19,13 +19,13 @@ let adicionaisDesmarcados = {};
 const serviçosAdicionais = {
     basico: [
         { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
-        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 208.45 },
         { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
         { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 }
     ],
     intermediario: [
         { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
-        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 208.45 },
         { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
         { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 },
         { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },
@@ -33,7 +33,7 @@ const serviçosAdicionais = {
     ],
     premium: [
         { nome: "Limpeza do Bico Injetor", pn: "OF20005", preco: 154.82 },
-        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 191.95 },
+        { nome: "Geometria e Balanceamento", pn: "GEL/BAL", preco: 208.45 },
         { nome: "Limpeza do TBI", pn: "OF20003", preco: 183.17 },
         { nome: "Limpeza do Sistema de Freio", pn: "OF20004", preco: 165.27 },
         { nome: "Higienização do Ar Condicionado", pn: "OF20006", preco: 266.95 },

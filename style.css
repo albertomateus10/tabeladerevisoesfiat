@@ -194,6 +194,7 @@ header {
 .btn-garantia {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 4px 10px;
     border-radius: var(--radius-sm);

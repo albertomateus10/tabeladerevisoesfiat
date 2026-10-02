@@ -171,7 +171,7 @@ header {
 .header-controls {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
 }
 
 /* Container de Data e Contador */
@@ -188,21 +188,21 @@ header {
     background: transparent;
     padding: 0;
     border: none;
-    gap: 16px;
+    gap: 10px;
 }
 
 .btn-garantia {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
+    gap: 6px;
+    padding: 4px 10px;
     border-radius: var(--radius-sm);
     background: var(--bg-primary);
     border: 1px solid var(--card-border);
     color: var(--text-secondary);
     font-family: 'Outfit', sans-serif;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     text-decoration: none;
     cursor: pointer;
     transition: var(--transition-smooth);
@@ -210,9 +210,11 @@ header {
 }
 
 .btn-garantia svg,
-.nav-tab svg {
-    width: 16px !important;
-    height: 16px !important;
+.btn-garantia i,
+.nav-tab svg,
+.nav-tab i {
+    width: 14px !important;
+    height: 14px !important;
 }
 
 .btn-garantia:hover {
@@ -225,15 +227,15 @@ header {
 .nav-tab {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
+    gap: 6px;
+    padding: 4px 10px;
     border-radius: var(--radius-sm);
     background: var(--bg-primary);
     border: 1px solid var(--card-border);
     color: var(--text-secondary);
     font-family: 'Outfit', sans-serif;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     cursor: pointer;
     transition: var(--transition-smooth);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);

@@ -58,10 +58,6 @@
                     </button>
                 </div>
                 <div class="date-counter-container" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                    <div id="current-date-display"
-                        style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; font-family: 'Outfit', sans-serif;">
-                        <!-- Injetado via JS -->
-                    </div>
                     <div id="visit-counter-display"
                         style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; font-family: 'Outfit', sans-serif;">
                         Visitas: <strong id="visit-count">0</strong>
@@ -91,7 +87,7 @@
                     <aside class="sidebar sidebar-root">
                         <div class="search-container" style="margin-bottom: 0.75rem;">
                             <i data-lucide="search" class="search-icon"></i>
-                            <input type="text" id="rev-model-search" class="search-input" placeholder="Buscar modelo">
+                            <input type="text" id="rev-model-search" class="search-input" placeholder="Modelo ou código da peça">
                         </div>
                         <div class="model-list" id="rev-root-list-container">
                             <!-- Os botões dos modelos raiz serão injetados via JS -->
@@ -117,8 +113,18 @@
                                 revisão programada, custos e peças.</p>
                         </div>
 
+                        <!-- Painel de Aplicação da Peça (busca por código) -->
+                        <div id="rev-pn-results" class="pn-results" style="display: none;"></div>
+
                         <!-- Bloco de Conteúdo da Revisão Selecionada (Inicialmente Oculto) -->
                         <div id="rev-data-container" style="display: none;">
+                            <!-- Barra para voltar ao painel da peça -->
+                            <div id="rev-pn-back-bar" class="pn-back-bar" style="display: none;">
+                                <button type="button" id="rev-pn-back-btn" class="pn-back-btn">
+                                    <i data-lucide="arrow-left"></i>
+                                    Voltar para a aplicação da peça <span id="rev-pn-back-code" class="item-pn"></span>
+                                </button>
+                            </div>
                             <!-- Card Principal com Título e Preço -->
                             <div class="premium-card">
                                 <div class="car-header">
@@ -312,7 +318,7 @@
                     <aside class="sidebar sidebar-root">
                         <div class="search-container" style="margin-bottom: 0.75rem;">
                             <i data-lucide="search" class="search-icon"></i>
-                            <input type="text" id="oil-model-search" class="search-input" placeholder="Buscar modelo">
+                            <input type="text" id="oil-model-search" class="search-input" placeholder="Modelo ou código da peça">
                         </div>
                         <div class="model-list" id="oil-root-list-container">
                             <!-- Os botões dos modelos raiz (ex: TORO, CRONOS) serão injetados via JS -->

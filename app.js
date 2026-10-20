@@ -14,6 +14,7 @@ let selectedRevRootModel = null;
 let selectedRevIndex = 0;
 let selectedPackageName = 'fabrica';
 let adicionaisDesmarcados = {};
+let revPNQuery = '';
 
 // Itens e preços de acréscimo para os pacotes de serviço
 const serviçosAdicionais = {
@@ -82,19 +83,6 @@ function getServicosAdicionais(packageName, carModelo) {
 }
 
 
-// Injeção da data atual formatada
-function initDate() {
-    const dateDisplay = document.getElementById('current-date-display');
-    if (!dateDisplay) return;
-
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const today = new Date();
-    let dateStr = today.toLocaleDateString('pt-BR', options);
-    // Capitalizar a primeira letra
-    dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-    dateDisplay.innerText = dateStr;
-}
-
 // Contador de visitas online (global)
 function initVisitCounter() {
     const counterDisplay = document.getElementById('visit-count');
@@ -135,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContent.classList.remove('hidden');
 
             // Inicializar componentes
-            initDate();
             initVisitCounter();
             initTabs();
             initRevisoes();
@@ -215,6 +202,190 @@ function getRootModel(name) {
     if (nameUpper.includes("UNO")) return "UNO";
 
     return name.split(" ")[0].toUpperCase();
+}
+
+// BUSCA POR CÓDIGO DA PEÇA (PN)
+function normalizePN(str) {
+    return String(str || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Retorna true se o veículo possui alguma peça cujo PN contém o texto buscado
+function carHasPN(carName, query) {
+    const q = normalizePN(query);
+    if (q.length < 3) return false;
+    const car = fiatData.modelos[carName];
+    if (!car || !Array.isArray(car.itens)) return false;
+    return car.itens.some(item => item.tipo !== 'serviço' && item.pn && normalizePN(item.pn).includes(q));
+}
+
+// Filtra modelos raiz pelo nome OU por código de peça presente em alguma versão
+function filterRootsBySearch(rootModelsList, rootGroups, filterText) {
+    const text = (filterText || '').trim().toLowerCase();
+    if (!text) return rootModelsList;
+    return rootModelsList.filter(root =>
+        root.toLowerCase().includes(text) ||
+        rootGroups[root].some(name => name.toLowerCase().includes(text) || carHasPN(name, text))
+    );
+}
+
+// Filtra as versões de um modelo raiz conforme a busca (nome da versão ou PN)
+function filterVersionsBySearch(root, versions, filterText) {
+    const text = (filterText || '').trim().toLowerCase();
+    if (!text || root.toLowerCase().includes(text)) return versions;
+    const matched = versions.filter(name => name.toLowerCase().includes(text) || carHasPN(name, text));
+    return matched.length > 0 ? matched : versions;
+}
+
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// "10000 km" -> "10.000 km"
+function formatKmLabel(label) {
+    return String(label).replace(/\d{4,}/, n => Number(n).toLocaleString('pt-BR'));
+}
+
+// Levanta em quais veículos e revisões as peças cujo PN contém o texto buscado são trocadas
+function findPartApplications(query) {
+    const q = normalizePN(query);
+    if (q.length < 3) return [];
+
+    const groups = {};
+    Object.keys(fiatData.modelos)
+        .filter(name => name.toLowerCase() !== '500e')
+        .sort(compareCarNames)
+        .forEach(carName => {
+            const car = fiatData.modelos[carName];
+            (car.itens || []).forEach(item => {
+                if (item.tipo === 'serviço' || !item.pn || !normalizePN(item.pn).includes(q)) return;
+
+                const key = String(item.pn);
+                if (!groups[key]) groups[key] = { pn: key, nome: item.nome, carros: [] };
+
+                const revs = [];
+                car.revisoes.forEach((revName, idx) => {
+                    const qty = item.trocas ? item.trocas[revName] : undefined;
+                    if (qty !== undefined && qty > 0) {
+                        revs.push({ idx, qty, label: formatKmLabel(car.quilometragens[idx] || `${idx + 1}ª`) });
+                    }
+                });
+
+                groups[key].carros.push({
+                    carName,
+                    preco: parseFloat(item.preco_unitario) || 0,
+                    revs,
+                    totalRevs: car.revisoes.length
+                });
+            });
+        });
+
+    return Object.values(groups);
+}
+
+// Renderiza (ou oculta) o painel de aplicação da peça na aba Revisões
+function renderRevPNResults() {
+    const panel = document.getElementById('rev-pn-results');
+    const welcomeCover = document.getElementById('rev-welcome-cover');
+    const dataContainer = document.getElementById('rev-data-container');
+    const backBar = document.getElementById('rev-pn-back-bar');
+    if (!panel) return;
+
+    const groups = findPartApplications(revPNQuery);
+
+    if (groups.length === 0) {
+        panel.style.display = 'none';
+        panel.innerHTML = '';
+        if (backBar) backBar.style.display = 'none';
+        if (currentRevCar) {
+            welcomeCover.style.display = 'none';
+            dataContainer.style.display = 'block';
+        } else {
+            welcomeCover.style.display = '';
+            dataContainer.style.display = 'none';
+        }
+        return;
+    }
+
+    welcomeCover.style.display = 'none';
+    dataContainer.style.display = 'none';
+    panel.style.display = 'flex';
+
+    const totalCarros = new Set(groups.flatMap(g => g.carros.map(c => c.carName))).size;
+
+    let html = `
+        <div class="pn-results-header">
+            <div>
+                <span class="pn-results-eyebrow"><i data-lucide="package-search"></i> Aplicação da peça</span>
+                <h2>Resultados para “${escapeHtml(revPNQuery.trim())}”</h2>
+                <p>Clique em uma quilometragem para abrir a revisão do veículo.</p>
+            </div>
+            <div class="pn-results-summary">
+                <div><strong>${groups.length}</strong><span>código(s)</span></div>
+                <div><strong>${totalCarros}</strong><span>veículo(s)</span></div>
+            </div>
+        </div>
+    `;
+
+    groups.forEach(g => {
+        const rows = g.carros.map(c => {
+            const carAttr = encodeURIComponent(c.carName);
+            const firstIdx = c.revs.length ? c.revs[0].idx : 0;
+            const allTag = c.revs.length > 0 && c.revs.length === c.totalRevs
+                ? `<span class="pn-all-tag">Todas</span>` : '';
+            const chips = c.revs.length
+                ? c.revs.map(r => `
+                    <button type="button" class="pn-rev-chip" data-car="${carAttr}" data-idx="${r.idx}"
+                        title="Abrir ${escapeHtml(c.carName)} – revisão de ${r.label}">
+                        ${r.label}${r.qty > 1 ? ` <small>×${r.qty}</small>` : ''}
+                    </button>`).join('')
+                : `<span class="pn-no-rev">Sem troca programada</span>`;
+
+            return `
+                <tr>
+                    <td class="item-name-cell" data-label="Veículo">
+                        <button type="button" class="pn-car-link" data-car="${carAttr}" data-idx="${firstIdx}">
+                            ${escapeHtml(c.carName)}
+                        </button>
+                    </td>
+                    <td class="text-right td-highlight" data-label="Preço Unit.">${formatCurrency(c.preco)}</td>
+                    <td class="pn-revs-cell" data-label="Revisões">
+                        <div class="pn-rev-chips">${allTag}${chips}</div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        html += `
+            <div class="premium-card pn-card">
+                <div class="pn-card-header">
+                    <div>
+                        <h3 class="pn-card-title">${escapeHtml(g.nome)}</h3>
+                        <span class="pn-card-sub">${g.carros.length} veículo(s) utilizam esta peça</span>
+                    </div>
+                    <span class="item-pn pn-card-code">${escapeHtml(g.pn)}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="pn-table">
+                        <thead>
+                            <tr>
+                                <th>Veículo</th>
+                                <th class="text-right">Preço Unit.</th>
+                                <th>Revisões em que é trocada</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    });
+
+    panel.innerHTML = html;
+    panel.scrollTop = 0;
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 function parseVersionName(fullName) {
@@ -309,12 +480,11 @@ function initRevisoes() {
     });
 
     const rootModelsList = Object.keys(rootGroups).sort();
+    let currentFilter = '';
 
     function renderRootList(filterText = '') {
         rootListContainer.innerHTML = '';
-        const filteredRoots = rootModelsList.filter(root =>
-            root.toLowerCase().includes(filterText.toLowerCase())
-        );
+        const filteredRoots = filterRootsBySearch(rootModelsList, rootGroups, filterText);
 
         filteredRoots.forEach((root) => {
             const btn = document.createElement('button');
@@ -339,7 +509,7 @@ function initRevisoes() {
         listContainer.innerHTML = '';
         if (!selectedRevRootModel) return;
 
-        const versions = rootGroups[selectedRevRootModel] || [];
+        const versions = filterVersionsBySearch(selectedRevRootModel, rootGroups[selectedRevRootModel] || [], currentFilter);
 
         versions.forEach((name) => {
             const btn = document.createElement('button');
@@ -372,8 +542,38 @@ function initRevisoes() {
     }
 
     searchInput.addEventListener('input', (e) => {
-        renderRootList(e.target.value);
+        currentFilter = e.target.value;
+        revPNQuery = currentFilter;
+        const filteredRoots = filterRootsBySearch(rootModelsList, rootGroups, currentFilter);
+        if (filteredRoots.length > 0 && !filteredRoots.includes(selectedRevRootModel)) {
+            selectedRevRootModel = filteredRoots[0];
+        }
+        renderRootList(currentFilter);
+        renderVersionList();
+        renderRevPNResults();
     });
+
+    // Abre o veículo/revisão clicado no painel de aplicação da peça
+    function openRevCarFromPN(carName, revIdx) {
+        selectedRevRootModel = getRootModel(carName);
+        selectRevCar(carName, revIdx);
+        renderRootList(currentFilter);
+        renderVersionList();
+    }
+
+    const pnPanel = document.getElementById('rev-pn-results');
+    if (pnPanel) {
+        pnPanel.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-car]');
+            if (!target) return;
+            openRevCarFromPN(decodeURIComponent(target.dataset.car), parseInt(target.dataset.idx, 10) || 0);
+        });
+    }
+
+    const pnBackBtn = document.getElementById('rev-pn-back-btn');
+    if (pnBackBtn) {
+        pnBackBtn.addEventListener('click', () => renderRevPNResults());
+    }
 
     if (rootModelsList.length > 0) {
         selectedRevRootModel = rootModelsList.includes("TORO") ? "TORO" : rootModelsList[0];
@@ -382,22 +582,42 @@ function initRevisoes() {
     }
 }
 
-function selectRevCar(carName) {
+function selectRevCar(carName, revIdx = 0) {
     try {
         currentRevCar = fiatData.modelos[carName];
-        selectedRevIndex = 0;
+        selectedRevIndex = revIdx;
         adicionaisDesmarcados = {};
 
         document.getElementById('rev-car-name').innerText = currentRevCar.modelo;
 
         const welcomeCover = document.getElementById('rev-welcome-cover');
         const dataContainer = document.getElementById('rev-data-container');
+        const pnPanel = document.getElementById('rev-pn-results');
+        const backBar = document.getElementById('rev-pn-back-bar');
 
         if (welcomeCover) welcomeCover.style.display = 'none';
+        if (pnPanel) pnPanel.style.display = 'none';
         if (dataContainer) dataContainer.style.display = 'block';
 
+        // Barra para voltar ao painel da peça, quando houver busca por código ativa
+        if (backBar) {
+            const hasPN = findPartApplications(revPNQuery).length > 0;
+            backBar.style.display = hasPN ? 'flex' : 'none';
+            const codeEl = document.getElementById('rev-pn-back-code');
+            if (codeEl) codeEl.innerText = revPNQuery.trim();
+        }
+
         renderRevKmGrid();
-        renderRevisionDetails(0);
+        renderRevisionDetails(revIdx);
+
+        const contentArea = document.querySelector('#tab-revisoes .content-area');
+        if (contentArea) contentArea.scrollTop = 0;
+        const activeKm = document.querySelector('#rev-km-grid .km-btn.active');
+        if (activeKm) activeKm.scrollIntoView({ block: 'nearest', inline: 'center' });
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     } catch (err) {
         console.error("Erro ao selecionar veículo para revisão:", err);
         alert("Erro ao selecionar o veículo: " + err.message);
@@ -532,6 +752,10 @@ function renderRevisionDetails(revIdx) {
             if (itemQty > 0) {
                 const tr = document.createElement('tr');
                 const textStyle = 'class="text-right td-highlight"';
+                const pnQ = normalizePN(revPNQuery);
+                if (pnQ.length >= 3 && normalizePN(item.pn).includes(pnQ)) {
+                    tr.classList.add('pn-match-row');
+                }
 
                 tr.innerHTML = `
                     <td class="item-name-cell" data-label="Componente">${item.nome}</td>
@@ -729,12 +953,11 @@ function initTrocaOleo() {
     });
 
     const rootModelsList = Object.keys(rootGroups).sort();
+    let currentFilter = '';
 
     function renderRootList(filterText = '') {
         rootListContainer.innerHTML = '';
-        const filteredRoots = rootModelsList.filter(root =>
-            root.toLowerCase().includes(filterText.toLowerCase())
-        );
+        const filteredRoots = filterRootsBySearch(rootModelsList, rootGroups, filterText);
 
         filteredRoots.forEach((root) => {
             const btn = document.createElement('button');
@@ -760,7 +983,7 @@ function initTrocaOleo() {
 
         if (!selectedRootModel) return;
 
-        const versions = rootGroups[selectedRootModel] || [];
+        const versions = filterVersionsBySearch(selectedRootModel, rootGroups[selectedRootModel] || [], currentFilter);
 
         versions.forEach((name) => {
             const btn = document.createElement('button');
@@ -793,7 +1016,13 @@ function initTrocaOleo() {
     }
 
     searchInput.addEventListener('input', (e) => {
-        renderRootList(e.target.value);
+        currentFilter = e.target.value;
+        const filteredRoots = filterRootsBySearch(rootModelsList, rootGroups, currentFilter);
+        if (filteredRoots.length > 0 && !filteredRoots.includes(selectedRootModel)) {
+            selectedRootModel = filteredRoots[0];
+        }
+        renderRootList(currentFilter);
+        renderVersionList();
     });
 
     if (rootModelsList.length > 0) {
